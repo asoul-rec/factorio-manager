@@ -9,7 +9,7 @@ from collections import namedtuple, deque, defaultdict
 from dataclasses import dataclass
 # import logging
 from typing import Optional, TypedDict, Literal
-from signal import SIGINT, CTRL_C_EVENT, CTRL_BREAK_EVENT
+from signal import SIGINT
 
 from .monitor import AsyncStreamMonitor
 
@@ -75,8 +75,8 @@ class FactorioServerDaemon:
                   'stdout': asyncio.subprocess.PIPE,
                   'stderr': asyncio.subprocess.PIPE}
         try:
-            logging.info("starting the server with detached cmd wrapper")
             if os.name == 'nt':
+                logging.info("starting the server with detached cmd wrapper")
                 # Factorio exe on Windows seems always call AttachConsole(ATTACH_PARENT_PROCESS) to reset
                 # the StdHandle, so we have to start a child process without a console and start Factorio
                 # as the grandchild process. The child process can be another python with redirected stream,
@@ -166,9 +166,13 @@ class FactorioServerDaemon:
                 return error
             return {"code": SATISFIED, "message": "The server is already stopped."}
         # exit gracefully with saving
-        logging.info("stopping the server by command")
-        self.process.stdin.write(b"/quit\r\n")
-        self.process.stdin.write_eof()
+        if os.name == 'nt':
+            logging.info("stopping the server by /quit command")
+            self.process.stdin.write(b"/quit\r\n")
+            self.process.stdin.write_eof()
+        else:
+            logging.info("stopping the server by signal.SIGINT")
+            self.process.send_signal(SIGINT)
         # wait_closed = asyncio.create_task(
         #     self._monitor['stdout'].wait_for(b'changing state from(Disconnected) to(Closed)')
         # )

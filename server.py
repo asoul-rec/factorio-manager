@@ -9,13 +9,16 @@ import grpc_server
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.DEBUG)
 
 parser = argparse.ArgumentParser(description="Factorio headless server manager [v231230]")
-parser.add_argument('-E', '--app-dir', help="Factorio application directory which contains 'bin', etc.")
-parser.add_argument('-D', '--data-dir', help="Factorio user data directory which contains 'saves', 'mods', etc.")
+parser.add_argument('-E', '--app-dir', help="Factorio application directory which contains 'bin', etc.", required=True)
+parser.add_argument('-D', '--data-dir', help="Factorio user data directory which contains 'saves', 'mods', etc."
+                    " (default the same as app-dir)")
 parser.add_argument('-p', '--port', type=int, default=50051, help="grpc server port to listen on (default 50051)")
 parser.add_argument('-H', '--host', default='[::]', help="grpc server ip to listen on (default [::] for all)")
 cli_args = parser.parse_args()
 app_dir = cli_args.app_dir
 data_dir = cli_args.data_dir
+if data_dir is None:
+    data_dir = app_dir
 grpc_address = f'{cli_args.host}:{cli_args.port}'
 
 exec_glob = os.path.join("bin", "*", "factorio")
