@@ -32,7 +32,7 @@ async def help_command(_, message):
 
 
 @app.on_message(filters=filters.command("allsaves"))
-async def start_command(_, message):
+async def allsaves_command(_, message):
     await message.reply(str(await manager.get_all_save_name()))
 
 
