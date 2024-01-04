@@ -1,0 +1,36 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+package factorio_server;
+
+service ServerManager {
+  rpc GetAllSaveName (google.protobuf.Empty) returns (SaveNameList);
+  rpc GetStatByName (SaveName) returns (SaveStat);
+  rpc StopServer (google.protobuf.Empty) returns (Status);
+  rpc StartServerByName (ServerOptions) returns (Status);
+  rpc RestartServer (ServerOptions) returns (Status);
+}
+
+message SaveNameList {
+  repeated SaveName save_name = 1;
+}
+
+message SaveName {
+  string name = 1;
+}
+
+// json encoded metadata of the saved file
+message SaveStat {
+  string stat_json = 1;
+}
+
+// server starting options
+message ServerOptions {
+  optional SaveName save_name = 1;
+  repeated string extra_args = 2;
+}
+
+// start/stop status
+message Status {
+  int32 code = 1;
+  string message = 2;
+}

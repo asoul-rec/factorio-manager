@@ -102,7 +102,7 @@ def version_to_str(ver):
     return '.'.join(str(x) for x in ver)
 
 
-def ticks_to_formatted_time(ticks):
+def ticks_to_formatted_time(ticks) -> str:
     second = ticks // 60
     h = second // 3600
     m = second % 3600 // 60
@@ -147,7 +147,7 @@ def load_metadata(filename):
             ds.assert_byte_seq(b'\x00\x00', "startup str")
             value.append(ds.read_str())
 
-    metadata["ticks"] = ticks = [ds.read_u32() for _ in range(3)]
+    metadata["ticks"] = ticks = tuple(ds.read_u32() for _ in range(3))
     metadata["play_time"] = ticks_to_formatted_time(ticks[2])
     metadata["total_time"] = ticks_to_formatted_time(ticks[0])
     return metadata
