@@ -1,11 +1,9 @@
-import glob
 import logging
 import os
 import asyncio
 import subprocess
-import sys
-# import subprocess
-from collections import namedtuple, deque, defaultdict
+from collections import deque
+from contextlib import contextmanager
 from dataclasses import dataclass
 # import logging
 from typing import Optional, TypedDict, Literal
@@ -19,13 +17,18 @@ __all__ = [
 ]
 
 SUCCESS = 0
-STARTING = 1
-STOPPING = 2
 
+ABORTED = 100
 SATISFIED = 101
-BAD_ARG = 102
-EXIT_ERROR = 103
-EXIT_UNEXPECT = 104
+NOT_AVAILABLE = 102
+STARTING = 103
+STOPPING = 104
+
+BAD_ARG = 111
+
+EXIT = 120
+EXIT_UNEXPECT = 121
+EXIT_ERROR = 122
 
 
 class Status(TypedDict):
@@ -45,11 +48,18 @@ def _cmd_path():
 
 
 class FactorioServerDaemon:
+    """
+    Act as a daemon for Factorio server process management.
+    Note: Factorio doesn't allow running multiple instances simultaneously, so in this implementation,
+    we must wait until the old process is fully stopped before starting a new one
+    """
+
     @dataclass
     class Info:
         args: Optional[list[str]] = None
         daemon: Optional[asyncio.Task] = None
         error: Optional[Status] = None
+        changing: Optional[int] = None
         # reset = super().__init__  # method
 
     _process_info: Info
@@ -69,37 +79,21 @@ class FactorioServerDaemon:
         }
 
     async def _daemon(self, args):
-        # start
-        self._process_info.error = {"code": STARTING, "message": "The server is starting but not ready yet."}
+        # starting
         kwargs = {'stdin':  asyncio.subprocess.PIPE,
                   'stdout': asyncio.subprocess.PIPE,
                   'stderr': asyncio.subprocess.PIPE}
         try:
             if os.name == 'nt':
-                logging.info("starting the server with detached cmd wrapper")
-                # Factorio exe on Windows seems always call AttachConsole(ATTACH_PARENT_PROCESS) to reset
-                # the StdHandle, so we have to start a child process without a console and start Factorio
-                # as the grandchild process. The child process can be another python with redirected stream,
-                # or simply cmd /C.
+                logging.debug(f"starting the server with detached cmd as wrapper, cmd={_cmd_path()}")
                 kwargs["creationflags"] = subprocess.DETACHED_PROCESS
-                # self.process = await asyncio.create_subprocess_exec(
-                #     sys.executable, '-c',
-                #     f"import subprocess, sys\n"
-                #     f"p=subprocess.run({[self.executable, *args]}, "
-                #     f"  stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)\n"
-                #     f"exit(p.returncode)",
-                #     **kwargs
-                # )
                 self.process = await asyncio.create_subprocess_exec(_cmd_path(), '/C', self.executable, *args, **kwargs)
             else:
-                logging.info("starting the server as subprocess")
+                logging.debug("starting the server as a subprocess directly")
                 self.process = await asyncio.create_subprocess_exec(self.executable, *args, **kwargs)
-
-            # self.process = await asyncio.create_subprocess_exec(self.executable, *args, **kwargs)
         except OSError as e:
             self._process_info.error = {"code": BAD_ARG, "message": f"Cannot start server. {type(e).__name__}: {e}"}
             return
-
         self._process_info.error = None
         self._monitor['stdout'].stream = self.process.stdout
         self._monitor['stderr'].stream = self.process.stderr
@@ -109,7 +103,7 @@ class FactorioServerDaemon:
             await self._monitor['stdout'].wait_eof()
             await self._monitor['stderr'].wait_eof()
         except asyncio.CancelledError:
-            self.process.kill()
+            self.process.kill()  # note: kill() seems NOT working for the cmd wrapper solution
         finally:
             if self.process.returncode is None:
                 self.process.kill()
@@ -117,7 +111,7 @@ class FactorioServerDaemon:
         stdout = self._stream_history('stdout', 128)
         stderr = self._stream_history('stderr', 128)
         out_streams = f'{stdout=!s}, {stderr=!s}'
-        # exit
+        # exiting (note that these error info may never be used if the next operation do not need it)
         if exit_code := self.process.returncode:
             self._process_info.error = {
                 "code":    EXIT_ERROR,
@@ -131,64 +125,86 @@ class FactorioServerDaemon:
             logging.info(f"the server exited normally, " + out_streams)
         self.process = None
 
+    @contextmanager
+    def _changing_state(self, code):
+        """similar to a lock, but fail rather than wait for release when occupied"""
+        if (old_code := self._process_info.changing) is None:
+            self._process_info.changing = code
+            yield
+            self._process_info.changing = None
+        else:
+            yield {"code":    old_code,
+                   "message": {STARTING: "The server is starting.", STOPPING: "The server is stopping"}[old_code]}
+
     async def start(self, args) -> Status:
-        if self.process:
-            if (error := self._process_info.error) is not None:
+        with self._changing_state(STARTING) as error:
+            # abort in invalid states
+            if error is not None:
                 return error
-            return {"code": SATISFIED, "message": "The server is already running."}
-        self._process_info.args = args
-        self._process_info.error = None
-        if self._process_info.daemon is not None:
-            self._process_info.daemon.cancel()
-        self._process_info.daemon = asyncio.create_task(self._daemon(args))
-        self._monitor['stdout'].stream = None  # clear the old stream to monitor the keyword correctly
-        wait_in_game = asyncio.create_task(
-            self._monitor['stdout'].wait_for(b'changing state from(CreatingGame) to(InGame)')
-        )
-        done, pending = await asyncio.wait(
-            [wait_in_game, self._process_info.daemon],
-            timeout=self.global_timeout, return_when=asyncio.FIRST_COMPLETED
-        )
-        if wait_in_game in done:
-            return {"code": SUCCESS, "message": None}
-        wait_in_game.cancel()
-        if not done:
-            self._process_info.daemon.cancel()
-            return {"code": EXIT_ERROR, "message": f"Starting is aborted after {self.global_timeout}s"}
-        if (error := self._process_info.error) is not None:
+            if self.process is not None:
+                if (error := self._process_info.error) is not None:
+                    return error
+                return {"code": SATISFIED, "message": "The server is already running."}
+            # prepare for starting
+            logging.info(f"start Factorio server with {args=}")
+            self._process_info.changing = STARTING
+            self._process_info.args = args
             self._process_info.error = None
-            return error
-        return {"code": EXIT_UNEXPECT, "message": "The daemon exit unexpectedly without setting an error"}
+            if self._process_info.daemon is not None:
+                self._process_info.daemon.cancel()
+            # start server
+            self._monitor['stdout'].stream = None  # clear the old stream to monitor the keyword correctly
+            wait_in_game = asyncio.create_task(
+                self._monitor['stdout'].wait_for(b'changing state from(CreatingGame) to(InGame)')
+            )
+            self._process_info.daemon = asyncio.create_task(self._daemon(args))
+            done, pending = await asyncio.wait(
+                [wait_in_game, self._process_info.daemon],
+                timeout=self.global_timeout, return_when=asyncio.FIRST_COMPLETED
+            )
+            # detect the result
+            if wait_in_game in done:
+                return {"code": SUCCESS, "message": None}
+            wait_in_game.cancel()
+            if not done:
+                self._process_info.daemon.cancel()
+                return {"code": EXIT_ERROR, "message": f"Starting is aborted after {self.global_timeout}s"}
+            if (error := self._process_info.error) is not None:
+                self._process_info.error = None
+                return error
+            return {"code": EXIT_UNEXPECT, "message": "The daemon exit unexpectedly without setting an error"}
 
     async def stop(self) -> Status:
-        if not self.process or self.process.returncode:  # do nothing if stopped
-            if (error := self._process_info.error) is not None:
+        with self._changing_state(STOPPING) as error:
+            # abort in invalid states
+            if error is not None:
                 return error
-            return {"code": SATISFIED, "message": "The server is already stopped."}
-        # exit gracefully with saving
-        if os.name == 'nt':
-            logging.info("stopping the server by /quit command")
-            self.process.stdin.write(b"/quit\r\n")
-            self.process.stdin.write_eof()
-        else:
-            logging.info("stopping the server by signal.SIGINT")
-            self.process.send_signal(SIGINT)
-        # wait_closed = asyncio.create_task(
-        #     self._monitor['stdout'].wait_for(b'changing state from(Disconnected) to(Closed)')
-        # )
-        await asyncio.wait([self._process_info.daemon], timeout=self.global_timeout)
-        self._process_info.error = None
-        if not self._process_info.daemon.done():
-            self._process_info.daemon.cancel()
-            return {"code": EXIT_ERROR, "message": f"Force stop after {self.global_timeout}s"}
-        return {"code": SUCCESS, "message": None}
-
-    def _reset(self):
-        self._process_info.__init__()
+            if self.process is None or self.process.returncode:  # do nothing if stopped
+                if (error := self._process_info.error) is not None:
+                    return error
+                return {"code": SATISFIED, "message": "The server is already stopped."}
+            # exit gracefully with saving
+            if os.name == 'nt':
+                # /quit command also work for Linux
+                logging.info("stopping the server by /quit command")
+                self.in_game_command("/quit")
+                self.process.stdin.write_eof()
+            else:
+                # SIGINT not work for Windows and I don't know how to use CTRL_C_EVENT correctly
+                logging.info("stopping the server by signal.SIGINT")
+                self.process.send_signal(SIGINT)
+            # wait_closed = asyncio.create_task(
+            #     self._monitor['stdout'].wait_for(b'changing state from(Disconnected) to(Closed)')
+            # )
+            await asyncio.wait([self._process_info.daemon], timeout=self.global_timeout)
+            # detect the result
+            self._process_info.error = None
+            if not self._process_info.daemon.done():
+                self._process_info.daemon.cancel()
+                return {"code": EXIT_ERROR, "message": f"Force stop after {self.global_timeout}s"}
+            return {"code": SUCCESS, "message": None}
 
     async def restart(self, args=None) -> Status:
-        # Factorio doesn't allow running multiple instances simultaneously, so we must wait until the old process
-        # is fully stopped before starting a new one
         old_args = self._process_info.args
         stop_status = await self.stop()
         if (stop_code := stop_status["code"]) and (stop_code != SATISFIED):
@@ -206,5 +222,14 @@ class FactorioServerDaemon:
             history = f"'...[{l - limit} chars]" + history[-limit:]
         return history
 
-# def is_running(self):
-#     return self._process_info is not None and self._process_info.process is not None
+    def in_game_command(self, cmd: str) -> Status:
+        if self.process is None:
+            return {"code": NOT_AVAILABLE, "message": "The server is not running."}
+        cmd = cmd.splitlines()
+        cmd.append('')
+        cmd = os.linesep.join(cmd).encode()
+        self.process.stdin.write(cmd)
+        # we cannot easily detect whether the server get the message and run it successfully,
+        # so leave this detection work for high-level code
+        return {"code": 0, "message": None}
+
