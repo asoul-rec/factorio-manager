@@ -1,4 +1,4 @@
-from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates
+from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat
 from .server_pb2_grpc import ServerManagerServicer
 
 from .save_explorer import SavesExplorer
@@ -6,9 +6,13 @@ from . import daemon
 
 
 class ServerManager(ServerManagerServicer):
-    def __init__(self, saves_dir, fac_exec):
+    def __init__(self, saves_dir, fac_exec, welcome_message='welcome to Factorio server'):
         self.saves = SavesExplorer(saves_dir)
         self.daemon = daemon.FactorioServerDaemon(fac_exec)
+        self.welcome = welcome_message
+
+    async def GetManagerStatus(self, request, context):
+        return ManagerStat(welcome=self.welcome, running=self.daemon.process is not None)
 
     async def GetAllSaveName(self, request, context):
         result = SaveNameList()

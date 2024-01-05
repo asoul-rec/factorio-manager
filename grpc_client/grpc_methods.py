@@ -5,7 +5,7 @@ import json
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from .server_pb2 import SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2
-from .server_pb2 import Command, UpdateInquiry, GameUpdates
+from .server_pb2 import Command, UpdateInquiry, GameUpdates, ManagerStat
 from .server_pb2_grpc import ServerManagerStub
 
 
@@ -34,6 +34,11 @@ class ServerManagerClient:
         async with grpc.aio.insecure_channel(self.address) as channel:
             yield ServerManagerStub(channel)
 
+    async def get_manager_status(self) -> tuple[bool, str]:
+        async with self._channel_stub() as stub:
+            status: ManagerStat = await stub.GetManagerStatus(Empty())
+            return status.running, status.welcome
+
     async def get_all_save_name(self) -> list[str]:
         async with self._channel_stub() as stub:
             save_list: SaveNameList = await stub.GetAllSaveName(Empty())
@@ -59,7 +64,8 @@ class ServerManagerClient:
 
     async def restart_server(self, save_name: str = None, extra_args: Sequence[str] = None) -> Status:
         async with self._channel_stub() as stub:
-            server_options = ServerOptions(save_name=SaveName(name=save_name))
+            save_name = None if save_name is None else SaveName(name=save_name)
+            server_options = ServerOptions(save_name=save_name)
             if extra_args is not None:
                 server_options.extra_args.extend(extra_args)
             status: StatusPB2 = await stub.RestartServer(server_options)

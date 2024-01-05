@@ -15,7 +15,10 @@ from signal import SIGINT
 from .monitor import AsyncStreamMonitor
 
 __all__ = [
-    'SUCCESS', 'STARTING', 'STOPPING', 'SATISFIED', 'BAD_ARG', 'EXIT_ERROR', 'EXIT_UNEXPECT',
+    'SUCCESS',
+    'ABORTED', 'SATISFIED', 'NOT_AVAILABLE', 'STARTING', 'STOPPING',
+    'BAD_ARG',
+    'EXIT', 'EXIT_UNEXPECT', 'EXIT_ERROR',
     'Status', 'FactorioServerDaemon'
 ]
 
