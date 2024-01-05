@@ -213,6 +213,7 @@ class FactorioServerDaemon:
         old_args = self._process_info.args
         stop_status = await self.stop()
         if (stop_code := stop_status["code"]) and (stop_code != SATISFIED):
+            stop_status = stop_status.copy()
             stop_status["message"] = "Encountered an error while stopping:" + stop_status["message"]
             return stop_status
         if args is None:

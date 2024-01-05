@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import grpc
 from . import server_pb2_grpc
@@ -12,5 +13,5 @@ async def run(config):
     listen_addr = config.address
     server.add_insecure_port(listen_addr)
     await server.start()
-    print(f'Serving on {listen_addr}')
+    logging.warning(f'Start serving on {listen_addr}')
     await server.wait_for_termination()
