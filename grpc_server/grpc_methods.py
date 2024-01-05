@@ -44,5 +44,8 @@ class ServerManager(ServerManagerServicer):
         return Status(**self.daemon.in_game_command(request.cmd))
 
     async def WaitForUpdates(self, request, context):
-        offset, messages = await self.daemon.get_message(request.from_offset)
+        from_offset = None
+        if request.HasField("from_offset"):
+            from_offset = request.from_offset
+        offset, messages = await self.daemon.get_message(from_offset)
         return GameUpdates(latest_offset=offset, updates=messages)

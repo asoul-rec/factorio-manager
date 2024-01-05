@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18grpc_server/server.proto\x12\x0f\x66\x61\x63torio_server\x1a\x1bgoogle/protobuf/empty.proto\"/\n\x0bManagerStat\x12\x0f\n\x07welcome\x18\x01 \x01(\t\x12\x0f\n\x07running\x18\x02 \x01(\x08\"<\n\x0cSaveNameList\x12,\n\tsave_name\x18\x01 \x03(\x0b\x32\x19.factorio_server.SaveName\"\x18\n\x08SaveName\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1d\n\x08SaveStat\x12\x11\n\tstat_json\x18\x01 \x01(\t\"d\n\rServerOptions\x12\x31\n\tsave_name\x18\x01 \x01(\x0b\x32\x19.factorio_server.SaveNameH\x00\x88\x01\x01\x12\x12\n\nextra_args\x18\x02 \x03(\tB\x0c\n\n_save_name\"\'\n\x06Status\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x16\n\x07\x43ommand\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\"$\n\rUpdateInquiry\x12\x13\n\x0b\x66rom_offset\x18\x01 \x01(\x05\"5\n\x0bGameUpdates\x12\x15\n\rlatest_offset\x18\x01 \x01(\x05\x12\x0f\n\x07updates\x18\x02 \x03(\x0c\x32\xd4\x04\n\rServerManager\x12H\n\x10GetManagerStatus\x12\x16.google.protobuf.Empty\x1a\x1c.factorio_server.ManagerStat\x12G\n\x0eGetAllSaveName\x12\x16.google.protobuf.Empty\x1a\x1d.factorio_server.SaveNameList\x12\x45\n\rGetStatByName\x12\x19.factorio_server.SaveName\x1a\x19.factorio_server.SaveStat\x12=\n\nStopServer\x12\x16.google.protobuf.Empty\x1a\x17.factorio_server.Status\x12L\n\x11StartServerByName\x12\x1e.factorio_server.ServerOptions\x1a\x17.factorio_server.Status\x12H\n\rRestartServer\x12\x1e.factorio_server.ServerOptions\x1a\x17.factorio_server.Status\x12\x42\n\rInGameCommand\x12\x18.factorio_server.Command\x1a\x17.factorio_server.Status\x12N\n\x0eWaitForUpdates\x12\x1e.factorio_server.UpdateInquiry\x1a\x1c.factorio_server.GameUpdatesb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18grpc_server/server.proto\x12\x0f\x66\x61\x63torio_server\x1a\x1bgoogle/protobuf/empty.proto\"/\n\x0bManagerStat\x12\x0f\n\x07welcome\x18\x01 \x01(\t\x12\x0f\n\x07running\x18\x02 \x01(\x08\"<\n\x0cSaveNameList\x12,\n\tsave_name\x18\x01 \x03(\x0b\x32\x19.factorio_server.SaveName\"\x18\n\x08SaveName\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1d\n\x08SaveStat\x12\x11\n\tstat_json\x18\x01 \x01(\t\"d\n\rServerOptions\x12\x31\n\tsave_name\x18\x01 \x01(\x0b\x32\x19.factorio_server.SaveNameH\x00\x88\x01\x01\x12\x12\n\nextra_args\x18\x02 \x03(\tB\x0c\n\n_save_name\"\'\n\x06Status\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x16\n\x07\x43ommand\x12\x0b\n\x03\x63md\x18\x01 \x01(\t\"9\n\rUpdateInquiry\x12\x18\n\x0b\x66rom_offset\x18\x01 \x01(\x05H\x00\x88\x01\x01\x42\x0e\n\x0c_from_offset\"5\n\x0bGameUpdates\x12\x15\n\rlatest_offset\x18\x01 \x01(\x05\x12\x0f\n\x07updates\x18\x02 \x03(\x0c\x32\xd4\x04\n\rServerManager\x12H\n\x10GetManagerStatus\x12\x16.google.protobuf.Empty\x1a\x1c.factorio_server.ManagerStat\x12G\n\x0eGetAllSaveName\x12\x16.google.protobuf.Empty\x1a\x1d.factorio_server.SaveNameList\x12\x45\n\rGetStatByName\x12\x19.factorio_server.SaveName\x1a\x19.factorio_server.SaveStat\x12=\n\nStopServer\x12\x16.google.protobuf.Empty\x1a\x17.factorio_server.Status\x12L\n\x11StartServerByName\x12\x1e.factorio_server.ServerOptions\x1a\x17.factorio_server.Status\x12H\n\rRestartServer\x12\x1e.factorio_server.ServerOptions\x1a\x17.factorio_server.Status\x12\x42\n\rInGameCommand\x12\x18.factorio_server.Command\x1a\x17.factorio_server.Status\x12N\n\x0eWaitForUpdates\x12\x1e.factorio_server.UpdateInquiry\x1a\x1c.factorio_server.GameUpdatesb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,9 +37,9 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_COMMAND']._serialized_start=385
   _globals['_COMMAND']._serialized_end=407
   _globals['_UPDATEINQUIRY']._serialized_start=409
-  _globals['_UPDATEINQUIRY']._serialized_end=445
-  _globals['_GAMEUPDATES']._serialized_start=447
-  _globals['_GAMEUPDATES']._serialized_end=500
-  _globals['_SERVERMANAGER']._serialized_start=503
-  _globals['_SERVERMANAGER']._serialized_end=1099
+  _globals['_UPDATEINQUIRY']._serialized_end=466
+  _globals['_GAMEUPDATES']._serialized_start=468
+  _globals['_GAMEUPDATES']._serialized_end=521
+  _globals['_SERVERMANAGER']._serialized_start=524
+  _globals['_SERVERMANAGER']._serialized_end=1120
 # @@protoc_insertion_point(module_scope)

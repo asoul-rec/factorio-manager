@@ -1,10 +1,12 @@
-from typing import Sequence, Iterable, TypedDict, Optional
+from contextlib import asynccontextmanager
+from typing import Sequence, TypedDict, Optional
+import json
 
 import grpc
-import json
-from .server_pb2 import SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2
-from .server_pb2_grpc import ServerManagerStub
 from google.protobuf.empty_pb2 import Empty
+from .server_pb2 import SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2
+from .server_pb2 import Command, UpdateInquiry, GameUpdates
+from .server_pb2_grpc import ServerManagerStub
 
 
 class SaveStat(TypedDict):
@@ -27,33 +29,48 @@ class ServerManagerClient:
     def __init__(self, address):
         self.address = address
 
-    async def get_all_save_name(self) -> list[str]:
+    @asynccontextmanager
+    async def _channel_stub(self):
         async with grpc.aio.insecure_channel(self.address) as channel:
-            save_list: SaveNameList = await ServerManagerStub(channel).GetAllSaveName(Empty())
+            yield ServerManagerStub(channel)
+
+    async def get_all_save_name(self) -> list[str]:
+        async with self._channel_stub() as stub:
+            save_list: SaveNameList = await stub.GetAllSaveName(Empty())
             return [save_name.name for save_name in save_list.save_name]
 
     async def get_stat_by_name(self, save_name: str) -> SaveStat:
-        async with grpc.aio.insecure_channel(self.address) as channel:
-            save_stat: SaveStatPB2 = await ServerManagerStub(channel).GetStatByName(SaveName(name=save_name))
+        async with self._channel_stub() as stub:
+            save_stat: SaveStatPB2 = await stub.GetStatByName(SaveName(name=save_name))
             return json.loads(save_stat.stat_json)
 
     async def start_server_by_name(self, save_name: str, extra_args: Sequence[str] = None) -> Status:
-        async with grpc.aio.insecure_channel(self.address) as channel:
+        async with self._channel_stub() as stub:
             server_options = ServerOptions(save_name=SaveName(name=save_name))
             if extra_args is not None:
                 server_options.extra_args.extend(extra_args)
-            status: StatusPB2 = await ServerManagerStub(channel).StartServerByName(server_options)
+            status: StatusPB2 = await stub.StartServerByName(server_options)
             return {"code": status.code, "message": status.message}
 
     async def stop_server(self) -> Status:
-        async with grpc.aio.insecure_channel(self.address) as channel:
-            status: StatusPB2 = await ServerManagerStub(channel).StopServer(Empty())
+        async with self._channel_stub() as stub:
+            status: StatusPB2 = await stub.StopServer(Empty())
             return {"code": status.code, "message": status.message}
 
     async def restart_server(self, save_name: str = None, extra_args: Sequence[str] = None) -> Status:
-        async with grpc.aio.insecure_channel(self.address) as channel:
+        async with self._channel_stub() as stub:
             server_options = ServerOptions(save_name=SaveName(name=save_name))
             if extra_args is not None:
                 server_options.extra_args.extend(extra_args)
-            status: StatusPB2 = await ServerManagerStub(channel).RestartServer(server_options)
+            status: StatusPB2 = await stub.RestartServer(server_options)
             return {"code": status.code, "message": status.message}
+
+    async def in_game_command(self, cmd: str) -> Status:
+        async with self._channel_stub() as stub:
+            status: StatusPB2 = await stub.InGameCommand(Command(cmd=cmd))
+            return {"code": status.code, "message": status.message}
+
+    async def get_message(self, from_offset=None) -> tuple[int, Sequence[bytes]]:
+        async with self._channel_stub() as stub:
+            update: GameUpdates = await stub.WaitForUpdates(UpdateInquiry(from_offset=from_offset))
+            return update.latest_offset, update.updates

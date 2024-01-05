@@ -48,7 +48,7 @@ message Command {
 }
 
 message UpdateInquiry {
-  int32 from_offset = 1;
+  optional int32 from_offset = 1;
 }
 
 message GameUpdates {
