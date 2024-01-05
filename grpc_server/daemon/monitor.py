@@ -1,13 +1,13 @@
 import asyncio
 from collections import deque, defaultdict
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, Callable
 
 
 class AsyncStreamMonitor:
     _stream: asyncio.StreamReader = None
     stream: asyncio.StreamReader
     history: deque
-    logger_callback: Optional[callable] = None
+    logger_callback: Optional[Callable[[bytes], None]] = None
     _KeywordInfo = TypedDict('_KeywordInfo', {'count': int, 'found': asyncio.Event, 'result': Optional[bytes]})
     _keywords: defaultdict[bytes, _KeywordInfo]
     _task: asyncio.Task

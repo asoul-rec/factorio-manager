@@ -3,11 +3,19 @@ import "google/protobuf/empty.proto";
 package factorio_server;
 
 service ServerManager {
+  rpc GetManagerStatus (google.protobuf.Empty) returns (ManagerStat);
   rpc GetAllSaveName (google.protobuf.Empty) returns (SaveNameList);
   rpc GetStatByName (SaveName) returns (SaveStat);
   rpc StopServer (google.protobuf.Empty) returns (Status);
   rpc StartServerByName (ServerOptions) returns (Status);
   rpc RestartServer (ServerOptions) returns (Status);
+  rpc InGameCommand (Command) returns (Status);
+  rpc WaitForUpdates (UpdateInquiry) returns (GameUpdates);
+}
+
+message ManagerStat {
+  string welcome = 1;
+  bool running = 2;
 }
 
 message SaveNameList {
@@ -33,4 +41,17 @@ message ServerOptions {
 message Status {
   int32 code = 1;
   string message = 2;
+}
+
+message Command {
+  string cmd = 1;
+}
+
+message UpdateInquiry {
+  int32 from_offset = 1;
+}
+
+message GameUpdates {
+  int32 latest_offset = 1;
+  repeated bytes updates = 2;
 }

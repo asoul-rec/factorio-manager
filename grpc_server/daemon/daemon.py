@@ -1,10 +1,13 @@
 import logging
 import os
 import asyncio
+import re
 import subprocess
+from asyncio import Event
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
+import itertools
 # import logging
 from typing import Optional, TypedDict, Literal
 from signal import SIGINT
@@ -62,21 +65,23 @@ class FactorioServerDaemon:
         changing: Optional[int] = None
         # reset = super().__init__  # method
 
-    _process_info: Info
     process: Optional[asyncio.subprocess.Process] = None
+    _process_info: Info
     _monitor: dict[Literal['stdout', 'stderr'], AsyncStreamMonitor]
+    message_buffer: deque[tuple[int, bytes]]
+    message_count: itertools.count
+    message_new: Event
 
-    def __init__(self, executable, timeout=10, logs_maxlen=None):
+    def __init__(self, executable, timeout=10, logs_maxlen=None, message_maxlen=None):
         self._process_info = self.Info()
         self.executable = executable
         self.global_timeout = timeout
-        self._monitor = {
-            stream_name: AsyncStreamMonitor(
-                history_maxlen=logs_maxlen,
-                logger_callback=lambda s, _predix=f"factorio {stream_name}: ": logging.debug(_predix + str(s))
-            )
-            for stream_name in ['stdout', 'stderr']
-        }
+        self.message_buffer = deque(maxlen=message_maxlen)
+        self.message_count = itertools.count()
+        self.message_new = Event()
+        self._monitor = {stream_name: AsyncStreamMonitor(history_maxlen=logs_maxlen)
+                         for stream_name in ['stdout', 'stderr']}
+        self._set_monitor_callback()  # it's safe to set callback of the monitor after initialization
 
     async def _daemon(self, args):
         # starting
@@ -228,8 +233,57 @@ class FactorioServerDaemon:
         cmd = cmd.splitlines()
         cmd.append('')
         cmd = os.linesep.join(cmd).encode()
+        logging.info(f"run command: {cmd}")
         self.process.stdin.write(cmd)
         # we cannot easily detect whether the server get the message and run it successfully,
         # so leave this detection work for high-level code
         return {"code": 0, "message": None}
 
+    def _set_monitor_callback(self):
+        def stdout_callback(s: bytes):
+            logging.debug(f"factorio stdout: " + str(s))
+            # match server logs and do nothing. otherwise, we assume it's a new message
+            if re.match(rb' *\d+\.\d{3} ', s) is None:
+                self.message_buffer.append((next(self.message_count), s))
+                self.message_new.set()
+
+        self._monitor["stderr"].logger_callback = lambda s: logging.debug(f"factorio stderr: " + str(s))
+        self._monitor["stdout"].logger_callback = stdout_callback
+
+    async def get_message(self, start_from: int = None) -> tuple[int, list[bytes]]:
+        """
+        This is designed for idempotent, stateless long polling. Multiple clients can work simultaneously
+        with no problem.
+
+        :param start_from: an offset to acknowledge the state. start_from<=0 means reading from the beginning;
+          start_from<=message_buffer[-1][0] will return instantly with buffered messages;
+          start_from>message_buffer[-1][0] or empty means waiting for new message.
+
+        :return: a sequence of the message(s) and the offset of the newest message.
+        """
+
+        result = []
+        if start_from is None:
+            start_from = float('inf')
+
+        if self.message_buffer and self.message_buffer[-1][0] >= start_from:
+            for message in reversed(self.message_buffer):
+                if message[0] < start_from:
+                    break
+                result.append(message)
+        else:
+            self.message_new.clear()
+            # buffer[-1] < start_from for now
+            await self.message_new.wait()
+            # It's probable that buffer[-1] >= start_from is still False, but we only wait once and return.
+            # buffer[-2] < start_from may also be False (multiple messages is added),
+            # so we must detect the offset again from the buffer to ensure no missed item
+            for message in reversed(self.message_buffer):
+                # at lease return 1 new message
+                result.append(message)
+                if message[0] <= start_from:
+                    # the next message will be too early
+                    break
+        offset = result[0][0]
+        result = [message[1] for message in result]
+        return offset, result[::-1]

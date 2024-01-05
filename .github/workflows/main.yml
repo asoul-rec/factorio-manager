@@ -28,3 +28,4 @@ jobs:
           export savefile=$(realpath -s ~/factorio/saves/test.zip)
           python -m unittest tests.test_daemon.TestFactorioServerDaemon.test_start_stop
           python -m unittest tests.test_daemon.TestFactorioServerDaemon.test_restart
+          python -m unittest tests.test_daemon.TestFactorioServerDaemon.test_get_message

@@ -15,6 +15,11 @@ class ServerManagerStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.GetManagerStatus = channel.unary_unary(
+                '/factorio_server.ServerManager/GetManagerStatus',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=grpc__server_dot_server__pb2.ManagerStat.FromString,
+                )
         self.GetAllSaveName = channel.unary_unary(
                 '/factorio_server.ServerManager/GetAllSaveName',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -40,10 +45,26 @@ class ServerManagerStub(object):
                 request_serializer=grpc__server_dot_server__pb2.ServerOptions.SerializeToString,
                 response_deserializer=grpc__server_dot_server__pb2.Status.FromString,
                 )
+        self.InGameCommand = channel.unary_unary(
+                '/factorio_server.ServerManager/InGameCommand',
+                request_serializer=grpc__server_dot_server__pb2.Command.SerializeToString,
+                response_deserializer=grpc__server_dot_server__pb2.Status.FromString,
+                )
+        self.WaitForUpdates = channel.unary_unary(
+                '/factorio_server.ServerManager/WaitForUpdates',
+                request_serializer=grpc__server_dot_server__pb2.UpdateInquiry.SerializeToString,
+                response_deserializer=grpc__server_dot_server__pb2.GameUpdates.FromString,
+                )
 
 
 class ServerManagerServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def GetManagerStatus(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def GetAllSaveName(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -75,9 +96,26 @@ class ServerManagerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def InGameCommand(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def WaitForUpdates(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ServerManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'GetManagerStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetManagerStatus,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=grpc__server_dot_server__pb2.ManagerStat.SerializeToString,
+            ),
             'GetAllSaveName': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAllSaveName,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
@@ -103,6 +141,16 @@ def add_ServerManagerServicer_to_server(servicer, server):
                     request_deserializer=grpc__server_dot_server__pb2.ServerOptions.FromString,
                     response_serializer=grpc__server_dot_server__pb2.Status.SerializeToString,
             ),
+            'InGameCommand': grpc.unary_unary_rpc_method_handler(
+                    servicer.InGameCommand,
+                    request_deserializer=grpc__server_dot_server__pb2.Command.FromString,
+                    response_serializer=grpc__server_dot_server__pb2.Status.SerializeToString,
+            ),
+            'WaitForUpdates': grpc.unary_unary_rpc_method_handler(
+                    servicer.WaitForUpdates,
+                    request_deserializer=grpc__server_dot_server__pb2.UpdateInquiry.FromString,
+                    response_serializer=grpc__server_dot_server__pb2.GameUpdates.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'factorio_server.ServerManager', rpc_method_handlers)
@@ -112,6 +160,23 @@ def add_ServerManagerServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class ServerManager(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def GetManagerStatus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetManagerStatus',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            grpc__server_dot_server__pb2.ManagerStat.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetAllSaveName(request,
@@ -195,5 +260,39 @@ class ServerManager(object):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/RestartServer',
             grpc__server_dot_server__pb2.ServerOptions.SerializeToString,
             grpc__server_dot_server__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def InGameCommand(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/InGameCommand',
+            grpc__server_dot_server__pb2.Command.SerializeToString,
+            grpc__server_dot_server__pb2.Status.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def WaitForUpdates(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/WaitForUpdates',
+            grpc__server_dot_server__pb2.UpdateInquiry.SerializeToString,
+            grpc__server_dot_server__pb2.GameUpdates.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

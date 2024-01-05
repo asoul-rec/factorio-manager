@@ -87,7 +87,7 @@ class TestFactorioServerDaemon(TestCase):
         async def restart():
             fac = FactorioServerDaemon(self.executable)
             status = await fac.restart()
-            self.assertDictEqual(status, {"code": daemon.BAD_ARG,
+            self.assertDictEqual(status, {"code":    daemon.BAD_ARG,
                                           "message": "Must provide starting arguments at the beginning"})
             status = await fac.start(['--start-server', self.savefile])
             self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
@@ -103,3 +103,45 @@ class TestFactorioServerDaemon(TestCase):
             self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
 
         self.loop.run_until_complete(restart())
+
+    def test_get_message(self):
+        async def _helper(put_messages, delay=0.):
+            if delay:
+                await asyncio.sleep(delay)
+            logging.info(f"put: {put_messages}")
+            for m in put_messages:
+                fac.message_buffer.append((next(fac.message_count), m))
+            fac.message_new.set()
+
+        async def get(start_init, expected):
+            start_from = start_init
+            while True:
+                mess = await fac.get_message(start_from)
+                self.assertEqual(next(expected), mess)
+                logging.info(f"get message: {mess}")
+                start_from = mess[0] + 1
+
+        async def test():
+            await _helper([b'a'])
+            get_1 = asyncio.create_task(get(0, exp1))
+            # Normally 'b' and 'c' should come at the same time? Note that async.sleep() is not accurate
+            await asyncio.gather(_helper([b'b'], 0.1), _helper([b'c'], 0.1), _helper([b'd'], 0.2))
+            get_2 = asyncio.create_task(get(2, exp2))  # they must come at the same time
+            await _helper([b'e', b'f'], 0.1)
+            await asyncio.sleep(0.1)
+            if get_1.done():
+                await get_1
+            else:
+                get_1.cancel()
+            if get_2.done():
+                await get_2
+            else:
+                get_2.cancel()
+            await asyncio.sleep(0.01)
+
+        fac = FactorioServerDaemon(self.executable)
+        exp1 = iter([(0, [b'a']), (2, [b'b', b'c']), (3, [b'd']), (5, [b'e', b'f'])])
+        exp2 = iter([(3, [b'c', b'd']), (5, [b'e', b'f'])])
+        self.loop.run_until_complete(test())
+        self.assertIsNone(next(exp1, None))
+        self.assertIsNone(next(exp2, None))

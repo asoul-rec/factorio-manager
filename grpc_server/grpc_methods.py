@@ -1,4 +1,4 @@
-from .server_pb2 import SaveNameList, SaveName, SaveStat, Status
+from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates
 from .server_pb2_grpc import ServerManagerServicer
 
 from .save_explorer import SavesExplorer
@@ -39,3 +39,10 @@ class ServerManager(ServerManagerServicer):
             args = None
         result = await self.daemon.restart(args)
         return Status(**result)
+
+    async def InGameCommand(self, request, context):
+        return Status(**self.daemon.in_game_command(request.cmd))
+
+    async def WaitForUpdates(self, request, context):
+        offset, messages = await self.daemon.get_message(request.from_offset)
+        return GameUpdates(latest_offset=offset, updates=messages)
