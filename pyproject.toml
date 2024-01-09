@@ -10,7 +10,7 @@ python = "^3.11"
 grpcio = "^1.60.0"
 grpcio-tools = "^1.60.0"
 pyrogram = "^2.0.106"
-
+tgcrypto = "^1.2.5"
 
 [build-system]
 requires = ["poetry-core"]
