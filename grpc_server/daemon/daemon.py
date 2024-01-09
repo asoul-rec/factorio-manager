@@ -142,7 +142,7 @@ class FactorioServerDaemon:
             self._process_info.changing = None
         else:
             yield {"code":    old_code,
-                   "message": {STARTING: "The server is starting.", STOPPING: "The server is stopping"}[old_code]}
+                   "message": {STARTING: "The server is starting.", STOPPING: "The server is stopping."}[old_code]}
 
     async def start(self, args) -> Status:
         with self._changing_state(STARTING) as error:
@@ -176,11 +176,11 @@ class FactorioServerDaemon:
             wait_in_game.cancel()
             if not done:
                 self._process_info.daemon.cancel()
-                return {"code": EXIT_ERROR, "message": f"Starting is aborted after {self.global_timeout}s"}
+                return {"code": EXIT_ERROR, "message": f"Starting is aborted after {self.global_timeout}s."}
             if (error := self._process_info.error) is not None:
                 self._process_info.error = None
                 return error
-            return {"code": EXIT_UNEXPECT, "message": "The daemon exit unexpectedly without setting an error"}
+            return {"code": EXIT_UNEXPECT, "message": "The daemon exit unexpectedly without setting an error."}
 
     async def stop(self) -> Status:
         with self._changing_state(STOPPING) as error:
@@ -209,7 +209,7 @@ class FactorioServerDaemon:
             self._process_info.error = None
             if not self._process_info.daemon.done():
                 self._process_info.daemon.cancel()
-                return {"code": EXIT_ERROR, "message": f"Force stop after {self.global_timeout}s"}
+                return {"code": EXIT_ERROR, "message": f"Force stopping after {self.global_timeout}s."}
             return {"code": SUCCESS, "message": None}
 
     async def restart(self, args=None) -> Status:
@@ -217,11 +217,11 @@ class FactorioServerDaemon:
         stop_status = await self.stop()
         if (stop_code := stop_status["code"]) and (stop_code != SATISFIED):
             stop_status = stop_status.copy()
-            stop_status["message"] = "Encountered an error while stopping:" + stop_status["message"]
+            stop_status["message"] = "Encountered an error while stopping: " + stop_status["message"]
             return stop_status
         if args is None:
             if old_args is None:
-                return {"code": BAD_ARG, "message": "Must provide starting arguments at the beginning"}
+                return {"code": BAD_ARG, "message": "Must provide starting arguments at the beginning."}
         return await self.start(old_args if args is None else args)
 
     def _stream_history(self, stream_name, limit=None):
@@ -241,7 +241,7 @@ class FactorioServerDaemon:
         self.process.stdin.write(cmd)
         # we cannot easily detect whether the server get the message and run it successfully,
         # so leave this detection work for high-level code
-        return {"code": 0, "message": None}
+        return {"code": SUCCESS, "message": None}
 
     def _set_monitor_callback(self):
         def stdout_callback(s: bytes):
