@@ -9,7 +9,7 @@ import grpc_server
 logging_level = logging.DEBUG if os.environ.get('FACTORIO_MANAGER_DEBUG', False) else logging.INFO
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging_level)
 
-parser = argparse.ArgumentParser(description="Factorio headless server manager [v231230]")
+parser = argparse.ArgumentParser(description="Factorio headless server manager [v240105]")
 parser.add_argument('-E', '--app-dir', help="Factorio application directory which contains 'bin', etc.", required=True)
 parser.add_argument('-D', '--data-dir', help="Factorio user data directory which contains 'saves', 'mods', etc."
                     " (default the same as app-dir)")
