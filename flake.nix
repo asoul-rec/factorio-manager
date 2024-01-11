@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     devenv.url = "github:cachix/devenv";
+    poetry2nix.url = "github:nix-community/poetry2nix";
   };
 
   nixConfig = {
@@ -11,11 +12,18 @@
     extra-substituters = "https://devenv.cachix.org";
   };
 
-  outputs = { self, nixpkgs, devenv, ... } @ inputs:
+  outputs = { self, nixpkgs, devenv, poetry2nix, ... } @ inputs:
     let
       pkgs = nixpkgs.legacyPackages."x86_64-linux";
+      inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
     in
     {
+      packages.x86_64-linux.default =
+        mkPoetryApplication
+          {
+            projectDir = ./.;
+          };
+
       devShell.x86_64-linux = devenv.lib.mkShell {
         inherit inputs pkgs;
         modules = [
