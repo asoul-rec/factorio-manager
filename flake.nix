@@ -42,7 +42,7 @@
         };
       flake = {
         nixosModules = rec {
-          factorio-manager-server = import ./nix/module.nix;
+          factorio-manager-server = import ./nix/module.nix inputs;
           default = factorio-manager-server;
         };
       };
