@@ -9,3 +9,4 @@ __pycache__
 *.session-journal
 /.devenv
 /dist
+/result
