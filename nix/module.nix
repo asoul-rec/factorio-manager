@@ -121,7 +121,7 @@ in
     systemd.services.factorio-manager-client = {
       description = "Factorio manager client";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+      after = [ "network.target" "factorio-manager-server.service"];
 
       serviceConfig = {
         Restart = "always";
