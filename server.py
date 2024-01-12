@@ -32,5 +32,5 @@ if not os.path.isdir(fac_save):
     logging.warning(f"no 'saves' dir in the user data directory")
 
 
-config = type("", (), {'address': grpc_address, 'saves_dir': fac_save, 'fac_exec': fac_exec})
+config = type("", (), {'address': grpc_address, 'saves_dir': fac_save, 'fac_exec': bin})
 asyncio.run(grpc_server.run(config))

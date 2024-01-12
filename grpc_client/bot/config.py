@@ -2,21 +2,20 @@ import json
 import logging
 import os
 
-_file_name = "./bot_config.json"
 config: dict
 
 
-def load():
+def load(cfg):
     global config
-    if os.path.isfile(_file_name):
-        with open(_file_name, 'r') as f:
+    if os.path.isfile(cfg):
+        with open(cfg, 'r') as f:
             config = json.load(f)
     else:
         config = {"api_id": None, "api_hash": None, "bot_token": None}
-        write()
+        write(cfg)
 
 
-def write():
-    logging.info(f"saving new config to {_file_name}")
-    with open(_file_name, 'w') as f:
+def write(cfg):
+    logging.info(f"saving new config to {cfg}")
+    with open(cfg, 'w') as f:
         json.dump(config, f, indent=2)

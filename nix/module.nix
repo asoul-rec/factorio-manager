@@ -6,6 +6,12 @@ let
   cfg = config.services.factorio-manager;
   name = "Factorio-Manager";
   stateDir = "/var/lib/${cfg.stateDirName}";
+  configFile = pkgs.writeText "factorio.conf" ''
+    use-system-read-write-data-directories=true
+    [path]
+    read-data=${cfg.factorioPackage}/share/factorio/data
+    write-data=${stateDir}
+  '';
 in
 {
   options = {
@@ -46,21 +52,48 @@ in
       };
       package = mkPackageOption inputs.self.packages.${pkgs.stdenv.hostPlatform.system} "default" { };
       factorioPackage = mkPackageOption pkgs "factorio-headless" { };
+      botConfigPath = mkOption {
+        type = types.str;
+        default = "";
+      };
+      serverSettingsFile = mkOption {
+        type = types.str;
+        default = "";
+        description = lib.mdDoc ''
+          The server settings file.
+        '';
+      };
+      serverAdminsFile = mkOption {
+        type = types.str;
+        default = "";
+        description = lib.mdDoc ''
+          The server admins file.
+        '';
+      };
     };
   };
 
   config = mkIf cfg.enable {
+    users.users.factorio = {
+      group = "factorio";
+      isSystemUser = true;
+    };
+    users.groups.factorio = { };
+
     systemd.services.factorio-manager-server = {
       description = "Factorio manager server";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
 
+      # workaround with outer config
+      preStart = "ln -sfn ${configFile} ${stateDir}/factorio.conf";
+
       serviceConfig = {
         Restart = "always";
-        KillSignal = "SIGINT";
-        DynamicUser = true;
+        User = "factorio";
+        Environment = [ "FACTORIO_MANAGER_DEBUG=1" ];
         StateDirectory = cfg.stateDirName;
-        UMask = "0007";
+
         ExecStart = toString [
           "${getExe' cfg.package "factorio-manager-server"}"
           "--executable ${getExe' cfg.factorioPackage "factorio"}"
@@ -85,6 +118,35 @@ in
       };
     };
 
+    systemd.services.factorio-manager-client = {
+      description = "Factorio manager client";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+
+      serviceConfig = {
+        Restart = "always";
+        User = "factorio";
+        StateDirectory = "factorio_manager_client";
+        ExecStart = toString [
+          "${getExe' cfg.package "factorio-manager-client"}"
+          "--bot_config ${cfg.botConfigPath}"
+        ];
+
+        # Sandboxing
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        ProtectControlGroups = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
+        RestrictRealtime = true;
+        RestrictNamespaces = true;
+        MemoryDenyWriteExecute = true;
+      };
+    };
     networking.firewall.allowedUDPPorts = optional cfg.openFirewall cfg.port;
   };
 }
