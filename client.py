@@ -10,23 +10,31 @@ from grpc_client import bot
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.DEBUG)
 logging.getLogger('pyrogram').setLevel(logging.INFO)
 
-bot.config.load()
-api_id = bot.config.config.get('api_id')
-api_hash = bot.config.config.get('api_hash')
-bot_token = bot.config.config.get('bot_token')
-admin_id = bot.config.config.get('admin_id')
 parser = argparse.ArgumentParser(description="Factorio headless server manager client [v240108]")
-parser.add_argument('--api_id', default=api_id, required=api_id is None)
-parser.add_argument('--api_hash', default=api_hash, required=api_hash is None)
-parser.add_argument('--bot_token', default=bot_token, required=bot_token is None)
-parser.add_argument('--admin_id', type=int, default=admin_id, required=admin_id is None)
-cli_args = parser.parse_args()
-api_id, api_hash, bot_token, admin_id = cli_args.api_id, cli_args.api_hash, cli_args.bot_token, cli_args.admin_id
-bot.config.config.update(api_id=api_id, api_hash=api_hash, bot_token=bot_token, admin_id=admin_id)
-bot.config.write()
+parser.add_argument('--bot_config', default="./bot_config.json")
 
-app = Client('Factorio Bot', api_id=api_id, api_hash=api_hash, bot_token=cli_args.bot_token,
-             parse_mode=ParseMode.DISABLED)
+parser.add_argument('--api_id')
+parser.add_argument('--api_hash')
+parser.add_argument('--bot_token')
+parser.add_argument('--admin_id')
+
+cli_args = parser.parse_args()
+
+bot.config.load(cli_args.bot_config)
+
+cfgs_from_file = bot.config.config
+
+api_id    = cli_args.api_id or cfgs_from_file.get('api_id')
+api_hash  = cli_args.api_hash or cfgs_from_file.get('api_hash')
+bot_token = cli_args.bot_token or cfgs_from_file.get('bot_token')
+admin_id  = cli_args.admin_id or cfgs_from_file.get('admin_id')
+
+# bot.config.config.update(api_id=api_id, api_hash=api_hash, bot_token=bot_token, admin_id=admin_id)
+# this may not work as expected since we use systemd credential management.
+# bot.config.write(cli_args.bot_config)
+
+app = Client('Factorio Bot', api_id=api_id, api_hash=api_hash, bot_token=bot_token,
+             parse_mode=ParseMode.DISABLED, in_memory=True)
 
 
 async def run_app():
@@ -47,6 +55,10 @@ async def help_command(_, message):
     await message.reply("no help")
 
 
-if __name__ == '__main__':
+def start():
     loop = asyncio.get_event_loop()
     run = loop.run_until_complete(run_app())
+
+if __name__ == '__main__':
+    start()
+    
