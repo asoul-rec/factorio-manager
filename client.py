@@ -34,7 +34,7 @@ admin_id  = cli_args.admin_id or cfgs_from_file.get('admin_id')
 # bot.config.write(cli_args.bot_config)
 
 app = Client('Factorio Bot', api_id=api_id, api_hash=api_hash, bot_token=bot_token,
-             parse_mode=ParseMode.DISABLED)
+             parse_mode=ParseMode.DISABLED, in_memory=True)
 
 
 async def run_app():
@@ -55,6 +55,10 @@ async def help_command(_, message):
     await message.reply("no help")
 
 
-if __name__ == '__main__':
+def start():
     loop = asyncio.get_event_loop()
     run = loop.run_until_complete(run_app())
+
+if __name__ == '__main__':
+    start()
+    

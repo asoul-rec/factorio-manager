@@ -33,4 +33,9 @@ if not os.path.isdir(fac_save):
 
 
 config = type("", (), {'address': grpc_address, 'saves_dir': fac_save, 'fac_exec': bin})
-asyncio.run(grpc_server.run(config))
+
+def start():
+  asyncio.run(grpc_server.run(config))
+
+if __name__ == '__main__':
+    start()
