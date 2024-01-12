@@ -2,8 +2,19 @@
 name = "factorio-manager"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["asoul-rec <asoulranbi@gmail.com>"]
 readme = "README.md"
+packages = [
+    {include = "client.py"},
+    {include = "server.py"},
+    {include = "grpc_server"},
+    {include = "grpc_client"}
+]
+
+[tool.poetry.scripts]
+factorio-manager-server = 'server:start'
+factorio-manager-client = 'client:start'
+
 
 [tool.poetry.dependencies]
 python = "^3.11"

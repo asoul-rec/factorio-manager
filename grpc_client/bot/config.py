@@ -2,12 +2,13 @@ import json
 import logging
 import os
 
-_file_name = "./bot_config.json"
-config: dict
+_file_name: str  # or path?
+config = {}
 
 
-def load():
-    global config
+def load(cfg):
+    global config, _file_name
+    _file_name = cfg
     if os.path.isfile(_file_name):
         with open(_file_name, 'r') as f:
             config = json.load(f)
@@ -18,5 +19,8 @@ def load():
 
 def write():
     logging.info(f"saving new config to {_file_name}")
-    with open(_file_name, 'w') as f:
-        json.dump(config, f, indent=2)
+    try:
+        with open(_file_name, 'w') as f:
+            json.dump(config, f, indent=2)
+    except IOError as e:
+        logging.error(f"failed to save config: {e}")
