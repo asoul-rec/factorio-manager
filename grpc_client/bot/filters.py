@@ -22,4 +22,4 @@ def group_topic(_, __, m: Message):
 
 
 def not_command(prefix='/'):
-    return filters.create(lambda _, __, m: not m.text.startswith(prefix))
+    return filters.create(lambda _, __, m: m.text is not None and not m.text.startswith(prefix))

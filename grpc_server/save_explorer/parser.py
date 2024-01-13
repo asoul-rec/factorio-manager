@@ -1,9 +1,7 @@
-from typing import Any
-from zipfile import ZipFile
+import zipfile
 from struct import Struct
 import zlib
 import io
-import string
 from warnings import warn
 import json
 
@@ -62,7 +60,7 @@ class Deserializer:
 
     @classmethod
     def load_save_zip(cls, zip_name, head_size=16384):
-        zf = ZipFile(zip_name, 'r')
+        zf = zipfile.ZipFile(zip_name, 'r')
         for dat_filename in zf.namelist():
             if dat_filename.endswith('/level.dat0'):
                 is_zlib = True
@@ -110,8 +108,11 @@ def ticks_to_formatted_time(ticks) -> str:
     return ':'.join(str(x) for x in [h, m, s])
 
 
-def load_metadata(filename):
-    ds = Deserializer.load_save_zip(filename)
+def load_metadata(filename) -> dict:
+    try:
+        ds = Deserializer.load_save_zip(filename)
+    except (zipfile.BadZipFile, zlib.error):
+        return {}
     metadata = {'version': version_to_str(ds.read_u16() for _ in range(4)), 'unknowns': []}
     ds.assert_byte_seq(b'\x00', "after version")
     sce = [ds.read_str(), ds.read_str()]
@@ -168,8 +169,8 @@ if __name__ == '__main__':
     import sys
 
     for save in sys.argv[1:]:
-        metadata = load_metadata(save)
+        info = load_metadata(save)
         print('%s:' % save)
-        print(metadata)
-        print(f"play time: {metadata['time']}")
+        print(info)
+        print(f"play time: {info['time']}")
         print()
