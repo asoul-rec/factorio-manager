@@ -206,7 +206,10 @@ class FactorioHandler:
     @check_manager
     async def restart_server(self, _, message: Message):
         name = _strip_command(message.text)
-        result = await self.manager.restart_server(name if name else None)
+        if name:
+            result = await self.manager.restart_server(name, config.config.get('extra_args'))
+        else:
+            result = await self.manager.restart_server()
         if code := result['code']:
             logging.warning(f"restarting failed, status: {result}")
             if code == BAD_ARG:
