@@ -73,80 +73,73 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    users.users.factorio = {
-      group = "factorio";
-      isSystemUser = true;
-    };
-    users.groups.factorio = { };
+  config = mkIf cfg.enable
+    (
+      let
+        hardeningConfig =
+          {
+            # Sandboxing
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            ProtectControlGroups = true;
+            ProtectKernelModules = true;
+            ProtectKernelTunables = true;
+            RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
+            RestrictRealtime = true;
+            RestrictNamespaces = true;
+            MemoryDenyWriteExecute = true;
+          };
+      in
+      {
+        users.users.factorio = {
+          group = "factorio";
+          isSystemUser = true;
+        };
+        users.groups.factorio = { };
 
-    systemd.services.factorio-manager-server = {
-      description = "Factorio manager server";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+        systemd.services.factorio-manager-server = {
+          description = "Factorio manager server";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network.target" ];
 
-      # workaround with outer config
-      preStart = "ln -sfn ${configFile} ${stateDir}/factorio.conf";
 
-      serviceConfig = {
-        Restart = "always";
-        User = "factorio";
-        Environment = [ "FACTORIO_MANAGER_DEBUG=1" ];
-        StateDirectory = cfg.stateDirName;
+          serviceConfig = {
+            Restart = "always";
+            User = "factorio";
+            Environment = [ "FACTORIO_MANAGER_DEBUG=1" ];
+            StateDirectory = cfg.stateDirName;
 
-        ExecStart = toString [
-          "${getExe' cfg.package "factorio-manager-server"}"
-          "--executable ${getExe' cfg.factorioPackage "factorio"}"
-          "--data-dir ${stateDir}"
-          "--port ${toString cfg.port}"
-          "--host ${cfg.bind}"
-        ];
+            ExecStart = toString [
+              "${getExe' cfg.package "factorio-manager-server"}"
+              "--executable ${getExe' cfg.factorioPackage "factorio"}"
+              "--data-dir ${stateDir}"
+              "--port ${toString cfg.port}"
+              "--host ${cfg.bind}"
+            ];
+          } // hardeningConfig;
+        };
 
-        # Sandboxing
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        ProtectControlGroups = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
-        RestrictRealtime = true;
-        RestrictNamespaces = true;
-        MemoryDenyWriteExecute = true;
-      };
-    };
+        systemd.services.factorio-manager-client = {
+          description = "Factorio manager client";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network.target" "factorio-manager-server.service" ];
 
-    systemd.services.factorio-manager-client = {
-      description = "Factorio manager client";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "factorio-manager-server.service"];
+          preStart = "ln -sfT ${configFile} ${stateDir}/factorio.conf";
 
-      serviceConfig = {
-        Restart = "always";
-        User = "factorio";
-        StateDirectory = "factorio_manager_client";
-        ExecStart = toString [
-          "${getExe' cfg.package "factorio-manager-client"}"
-          "--bot_config ${cfg.botConfigPath}"
-        ];
-
-        # Sandboxing
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        ProtectControlGroups = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
-        RestrictRealtime = true;
-        RestrictNamespaces = true;
-        MemoryDenyWriteExecute = true;
-      };
-    };
-    networking.firewall.allowedUDPPorts = optional cfg.openFirewall cfg.port;
-  };
+          serviceConfig = {
+            Restart = "always";
+            User = "factorio";
+            StateDirectory = cfg.stateDirName;
+            ExecStart = toString [
+              "${getExe' cfg.package "factorio-manager-client"}"
+              "--bot_config ${cfg.botConfigPath}"
+            ];
+          } // hardeningConfig;
+        };
+        networking.firewall.allowedUDPPorts = optional cfg.openFirewall cfg.port;
+      }
+    );
 }
