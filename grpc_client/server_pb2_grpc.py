@@ -55,6 +55,11 @@ class ServerManagerStub(object):
                 request_serializer=grpc__client_dot_server__pb2.UpdateInquiry.SerializeToString,
                 response_deserializer=grpc__client_dot_server__pb2.GameUpdates.FromString,
                 )
+        self.GetOutputStreams = channel.unary_unary(
+                '/factorio_server.ServerManager/GetOutputStreams',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=grpc__client_dot_server__pb2.OutputStreams.FromString,
+                )
 
 
 class ServerManagerServicer(object):
@@ -108,6 +113,12 @@ class ServerManagerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetOutputStreams(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ServerManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -150,6 +161,11 @@ def add_ServerManagerServicer_to_server(servicer, server):
                     servicer.WaitForUpdates,
                     request_deserializer=grpc__client_dot_server__pb2.UpdateInquiry.FromString,
                     response_serializer=grpc__client_dot_server__pb2.GameUpdates.SerializeToString,
+            ),
+            'GetOutputStreams': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetOutputStreams,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=grpc__client_dot_server__pb2.OutputStreams.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -294,5 +310,22 @@ class ServerManager(object):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/WaitForUpdates',
             grpc__client_dot_server__pb2.UpdateInquiry.SerializeToString,
             grpc__client_dot_server__pb2.GameUpdates.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetOutputStreams(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetOutputStreams',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            grpc__client_dot_server__pb2.OutputStreams.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

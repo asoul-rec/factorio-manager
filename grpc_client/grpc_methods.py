@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager
-from typing import Sequence, TypedDict, Optional
+from typing import Sequence, TypedDict, Optional, Literal
 import json
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from .server_pb2 import SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2
-from .server_pb2 import Command, UpdateInquiry, GameUpdates, ManagerStat
+from .server_pb2 import Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams
 from .server_pb2_grpc import ServerManagerStub
 
 
@@ -80,3 +80,8 @@ class ServerManagerClient:
         async with self._channel_stub() as stub:
             update: GameUpdates = await stub.WaitForUpdates(UpdateInquiry(from_offset=from_offset))
             return update.latest_offset, update.updates
+
+    async def get_output_streams(self) -> dict[Literal['stdout', 'stderr'], bytes]:
+        async with self._channel_stub() as stub:
+            streams: OutputStreams = await stub.GetOutputStreams(Empty())
+            return {'stdout': streams.stdout, 'stderr': streams.stderr}

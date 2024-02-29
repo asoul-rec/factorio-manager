@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import logging
 import shlex
@@ -170,7 +171,7 @@ class FactorioHandler:
         return wrapper
 
     @check_manager
-    async def start_server(self, _, message: Message):
+    async def start_server(self, client: Client, message: Message):
         name = _strip_command(message.text)
         if not name:
             await message.reply(REPLIES["err"]["no_savename"])
@@ -182,12 +183,13 @@ class FactorioHandler:
                 await message.reply(REPLIES["err"]["started"])
             else:
                 await message.reply(REPLIES["err"]["unknown_failed"])
+                await self.send_output_admin(client)
         else:
             logging.info(f"server started successfully")
             await message.reply(REPLIES["done"]["start"])
 
     @check_manager
-    async def stop_server(self, _, message: Message):
+    async def stop_server(self, client: Client, message: Message):
         result = await self.manager.stop_server()
         if code := result['code']:
             logging.warning(f"stopping failed, status: {result}")
@@ -199,12 +201,13 @@ class FactorioHandler:
                     await message.reply(REPLIES["err"]["stopped"])
                 else:
                     await message.reply(REPLIES["err"]["unknown_failed"])
+                    await self.send_output_admin(client)
         else:
             logging.info(f"server stopped successfully")
             await message.reply(REPLIES["done"]["stop"])
 
     @check_manager
-    async def restart_server(self, _, message: Message):
+    async def restart_server(self, client: Client, message: Message):
         name = _strip_command(message.text)
         if name:
             result = await self.manager.restart_server(name, config.config.get('extra_args'))
@@ -216,6 +219,7 @@ class FactorioHandler:
                 await message.reply(REPLIES["err"]["no_savename"])
             else:
                 await message.reply(REPLIES["err"]["unknown_failed"])
+                await self.send_output_admin(client)
         else:
             logging.info(f"server restarted successfully")
             await message.reply(REPLIES["done"]["restart"])
@@ -281,6 +285,18 @@ class FactorioHandler:
                 )
                 await asyncio.sleep(3)  # simple throttling for 20/min
             offset = last_offset + 1
+
+    async def send_output_admin(self, client: Client):
+        admin_id = config.config['admin_id']
+        output = await self.manager.get_output_streams()
+        if s := output['stdout']:
+            await client.send_document(admin_id, io.BytesIO(s), file_name="stdout.txt")
+        else:
+            await client.send_message(admin_id, "stdout is empty")
+        if s := output['stderr']:
+            await client.send_document(admin_id, io.BytesIO(s), file_name="stderr.txt")
+        else:
+            await client.send_message(admin_id, "stderr is empty")
 
     # async def _push_watchdog(self):
     #     while True:

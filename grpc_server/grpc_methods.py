@@ -1,4 +1,4 @@
-from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat
+from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams
 from .server_pb2_grpc import ServerManagerServicer
 
 from .save_explorer import SavesExplorer
@@ -53,3 +53,7 @@ class ServerManager(ServerManagerServicer):
             from_offset = request.from_offset
         offset, messages = await self.daemon.get_message(from_offset)
         return GameUpdates(latest_offset=offset, updates=messages)
+
+    async def GetOutputStreams(self, request, context):
+        stdout, stderr = await self.daemon.get_output()
+        return OutputStreams(stdout=stdout, stderr=stderr)

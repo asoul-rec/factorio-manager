@@ -291,3 +291,6 @@ class FactorioServerDaemon:
         offset = result[0][0]
         result = [message[1] for message in result]
         return offset, result[::-1]
+
+    async def get_output(self) -> tuple[bytes, bytes]:
+        return b''.join(self._monitor['stdout'].history), b''.join(self._monitor['stderr'].history)

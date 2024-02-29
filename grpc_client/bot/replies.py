@@ -19,7 +19,7 @@ REPLIES = {
         "grpc_connect": "已连接到位于 {} 的gRPC服务器：{}",
         "extra_args":   "Factorial的启动参数从\n{}\n更改为\n{}",
         "all_conf":     "机器人配置数据如下：\n{}",
-        "savelist": "服务器有以下存档（时间为游戏内时间）：\n{}"
+        "savelist":     "服务器有以下存档（时间为游戏内时间）：\n{}"
     },
     "err":  {
         # "admin_not_user": "请将管理员设置为用户而不是群组，否则机器人将不会工作",
@@ -33,8 +33,8 @@ REPLIES = {
         "unknown_failed": "执行失败，具体原因已记录到日志"
     },
     "game": {
-        "chat": "{} 说: {}",
-        "join": "{} 加入了游戏",
+        "chat":  "{} 说: {}",
+        "join":  "{} 加入了游戏",
         "leave": "{} 离开了游戏"
     }
 }

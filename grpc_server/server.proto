@@ -11,6 +11,7 @@ service ServerManager {
   rpc RestartServer (ServerOptions) returns (Status);
   rpc InGameCommand (Command) returns (Status);
   rpc WaitForUpdates (UpdateInquiry) returns (GameUpdates);
+  rpc GetOutputStreams (google.protobuf.Empty) returns (OutputStreams);
 }
 
 message ManagerStat {
@@ -54,4 +55,9 @@ message UpdateInquiry {
 message GameUpdates {
   int32 latest_offset = 1;
   repeated bytes updates = 2;
+}
+
+message OutputStreams {
+  bytes stdout = 1;
+  bytes stderr = 2;
 }
