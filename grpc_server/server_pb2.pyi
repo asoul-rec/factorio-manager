@@ -67,3 +67,11 @@ class GameUpdates(_message.Message):
     latest_offset: int
     updates: _containers.RepeatedScalarFieldContainer[bytes]
     def __init__(self, latest_offset: _Optional[int] = ..., updates: _Optional[_Iterable[bytes]] = ...) -> None: ...
+
+class OutputStreams(_message.Message):
+    __slots__ = ("stdout", "stderr")
+    STDOUT_FIELD_NUMBER: _ClassVar[int]
+    STDERR_FIELD_NUMBER: _ClassVar[int]
+    stdout: bytes
+    stderr: bytes
+    def __init__(self, stdout: _Optional[bytes] = ..., stderr: _Optional[bytes] = ...) -> None: ...
