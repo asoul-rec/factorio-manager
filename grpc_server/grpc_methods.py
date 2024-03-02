@@ -6,9 +6,9 @@ from . import daemon
 
 
 class ServerManager(ServerManagerServicer):
-    def __init__(self, saves_dir, fac_exec, welcome_message='welcome to Factorio server'):
+    def __init__(self, saves_dir, fac_exec, fac_timeout, welcome_message='welcome to Factorio server'):
         self.saves = SavesExplorer(saves_dir)
-        self.daemon = daemon.FactorioServerDaemon(fac_exec)
+        self.daemon = daemon.FactorioServerDaemon(fac_exec, timeout=fac_timeout)
         self.welcome = welcome_message
 
     async def GetManagerStatus(self, request, context):
