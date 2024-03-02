@@ -9,7 +9,9 @@ from .grpc_methods import ServerManager
 # Starting the server
 async def run(config):
     server = grpc.aio.server(compression=grpc.Compression.Deflate)
-    server_pb2_grpc.add_ServerManagerServicer_to_server(ServerManager(config.saves_dir, config.fac_exec), server)
+    server_pb2_grpc.add_ServerManagerServicer_to_server(
+        ServerManager(config.saves_dir, config.fac_exec, fac_timeout=30), server
+    )
     listen_addr = config.address
     server.add_insecure_port(listen_addr)
     await server.start()
