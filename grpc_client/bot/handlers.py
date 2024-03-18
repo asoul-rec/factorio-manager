@@ -262,8 +262,9 @@ class FactorioHandler:
     async def saves_list(self, _, message: Message):
         names = await self.manager.get_all_save_name()
         infos = await asyncio.gather(*[self.manager.get_stat_by_name(name) for name in names])
-        result = '\n'.join([f"{name}: {info.get('play_time', 'unknown')}" for name, info in zip(names, infos)])
-        await message.reply(REPLIES["done"]["savelist"].format(result))
+        time_order = sorted(range(len(infos)), key=lambda x: infos[x].get('ticks', [-1, -1, -1])[2])
+        result = [f"{names[i]}: {infos[i].get('play_time', 'unknown')}" for i in time_order]
+        await message.reply(REPLIES["done"]["savelist"].format('\n'.join(result)))
 
     async def push_update(self, client: Client, chat_id):
         offset = None
