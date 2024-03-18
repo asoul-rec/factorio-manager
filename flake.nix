@@ -13,7 +13,7 @@
   };
 
   outputs = inputs@{ flake-parts, devenv, poetry2nix, nixpkgs, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
+    flake-parts.lib.mkFlake { inherit inputs; } ({ withSystem, ... }: {
       imports = [
         inputs.devenv.flakeModule
       ];
@@ -41,10 +41,20 @@
           };
         };
       flake = {
-        nixosModules = rec {
-          factorio-manager-server = import ./nix/module.nix inputs;
-          default = factorio-manager-server;
-        };
+        nixosModules =
+          let
+            factorio-manager-server = { pkgs, ... }: {
+              imports = [ ./nix/module.nix ];
+              services.factorio-manager.package =
+                withSystem pkgs.stdenv.hostPlatform.system ({ config, ... }:
+                  config.packages.default
+                );
+            };
+          in
+          {
+            inherit factorio-manager-server;
+            default = factorio-manager-server;
+          };
       };
-    };
+    });
 }
