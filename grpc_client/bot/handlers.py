@@ -250,7 +250,9 @@ class FactorioHandler:
     async def saves_list(self, _, message: Message):
         names = await self.manager.get_all_save_name()
         infos = await asyncio.gather(*[self.manager.get_stat_by_name(name) for name in names])
-        result = '\n'.join([f"{name}: {info.get('play_time', 'unknown')}" for name, info in zip(names, infos)])
+        lines_res = [f"{name}: {info.get('play_time', 'unknown')}" for name, info in zip(names, infos)]
+        resps = sorted(lines_res, key=lambda x: tuple(int(num) if num.isdigit() else float('inf') for num in x.split(': ')[-1].split(':')))
+        result = '\n'.join(resps)
         await message.reply(REPLIES["done"]["savelist"].format(result))
 
     async def push_update(self, client: Client, chat_id):
