@@ -66,7 +66,8 @@ def add_handlers(client: Client):
         ['group', handlers.set_chat_id],
         ['server', handlers.set_address],
         ['startarg', handlers.set_extra_args],
-        ['getconf', handlers.get_config]
+        ['getconf', handlers.get_config],
+        ['style', handlers.set_reply_style],
     ]
     for name, func in admin_commands:
         client.add_handler(MessageHandler(func, filters=my_filters.admin & filters.command(name)))

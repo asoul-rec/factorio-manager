@@ -2,7 +2,7 @@
 *.zip
 __pycache__
 *~
-*.json
+/*.json
 
 # pyrogram database
 *.session

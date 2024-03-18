@@ -113,6 +113,18 @@ async def set_extra_args(_, message: Message):
     await message.reply(REPLIES["done"]["extra_args"].format(old_mono, new_mono), parse_mode=ParseMode.MARKDOWN)
 
 
+async def set_reply_style(_, message: Message):
+    from .replies import ALL_REPLIES
+    style = _strip_command(message.text)
+    if style in ALL_REPLIES:
+        REPLIES.update(ALL_REPLIES[style])
+        config.config["reply_style"] = style
+        config.write()
+        await message.reply(REPLIES["done"]["style"].format(style))
+    else:
+        await message.reply(REPLIES["err"]["no_style"].format(style))
+
+
 async def get_config(_, message: Message):
     conf = config.config.copy()
     for sensitive in ["api_id", "api_hash", "bot_token"]:

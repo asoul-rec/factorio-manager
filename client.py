@@ -41,6 +41,8 @@ async def run_app():
     logging.info("start Factorio bot")
     async with app:
         try:
+            if (style := cfgs_from_file.get('reply_style')) is not None and style in bot.replies.ALL_REPLIES:
+                bot.replies.REPLIES.update(bot.replies.ALL_REPLIES[style])
             if await bot.utils.first_run(app):
                 bot.utils.add_handlers(app)
                 await idle()
@@ -55,10 +57,5 @@ async def help_command(_, message):
     await message.reply("no help")
 
 
-def start():
-    loop = asyncio.get_event_loop()
-    run = loop.run_until_complete(run_app())
-
-
 if __name__ == '__main__':
-    start()
+    app.run(run_app())
