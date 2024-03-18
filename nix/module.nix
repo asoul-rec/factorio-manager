@@ -1,4 +1,4 @@
-inputs: { config, lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 with lib;
 
@@ -50,7 +50,9 @@ in
           The configuration and map will be stored here.
         '';
       };
-      package = mkPackageOption inputs.self.packages.${pkgs.stdenv.hostPlatform.system} "default" { };
+      package = mkOption {
+        defaultText = lib.literalMD "`packages.default` from this flake";
+      };
       factorioPackage = mkPackageOption pkgs "factorio-headless" { };
       botConfigPath = mkOption {
         type = types.str;
