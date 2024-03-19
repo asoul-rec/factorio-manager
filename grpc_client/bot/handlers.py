@@ -255,7 +255,6 @@ class FactorioHandler:
         result = '\n'.join(resps)
         await message.reply(REPLIES["done"]["savelist"].format(result))
 
-    @check_manager
     async def backup(self, _, message: Message):
         import os
         state_dir = os.getenv('STATE_DIRECTORY')
