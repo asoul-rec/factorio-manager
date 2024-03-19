@@ -255,6 +255,24 @@ class FactorioHandler:
         result = '\n'.join(resps)
         await message.reply(REPLIES["done"]["savelist"].format(result))
 
+    async def backup(self, _, message: Message):
+        import os
+        state_dir = os.getenv('STATE_DIRECTORY')
+
+        if state_dir is None:
+            await message.reply(REPLIES["err"]["env_notfound"])
+            return
+
+        import shutil
+        from datetime import datetime
+
+        saves_dir = os.path.join(os.path.abspath(state_dir), "saves")
+        date = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        zip_path = f"{date}-factorio-backup.zip"
+        with shutil.make_archive(zip_path, "zip", directory_path):
+            await message.reply_document(zip_path)
+
+
     async def push_update(self, client: Client, chat_id):
         offset = None
         info_pattern = re.compile(r"(?P<datetime>\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)"

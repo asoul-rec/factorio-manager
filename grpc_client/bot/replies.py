@@ -31,6 +31,7 @@ REPLIES = {
         "started":        "服务器正在运行，请先停止服务器或重新启动服务器",
         "stopped":        "服务器未在运行，命令无效",
         "unknown_failed": "执行失败，具体原因已记录到日志"
+        "env_notfound":   "环境不对"
     },
     "game": {
         "chat":  "{} 说: {}",

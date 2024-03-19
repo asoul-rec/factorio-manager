@@ -79,6 +79,7 @@ def add_handlers(client: Client):
         ['status', fac_handlers.running_status],
         ['run', fac_handlers.run_command],
         ['savelist', fac_handlers.saves_list]
+        ['backup', fac_handlers.backup]
     ]
 
     for name, func in game_commands:
