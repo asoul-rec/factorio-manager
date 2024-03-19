@@ -112,6 +112,7 @@ class FactorioServerDaemon:
             await self._monitor['stderr'].wait_eof()
         except asyncio.CancelledError:
             self.process.kill()  # note: kill() seems NOT working for the cmd wrapper solution
+            raise
         finally:
             if self.process.returncode is None:
                 self.process.kill()
