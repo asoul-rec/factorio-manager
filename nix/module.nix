@@ -113,7 +113,10 @@ in
             User = "factorio";
             Environment = [ "FACTORIO_MANAGER_DEBUG=1" ];
             StateDirectory = cfg.stateDirName;
-
+            KillMode = "mixed";
+            TimeoutStopSec = 30;
+            KillSignal = "SIGINT";
+            SendSIGKILL = "yes";
             ExecStart = toString [
               "${getExe' cfg.package "factorio-manager-server"}"
               "--executable ${getExe' cfg.factorioPackage "factorio"}"
