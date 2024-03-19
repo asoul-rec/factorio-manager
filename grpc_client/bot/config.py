@@ -2,20 +2,25 @@ import json
 import logging
 import os
 
-config: dict
+_file_name: str  # or path?
+config = {}
 
 
 def load(cfg):
-    global config
-    if os.path.isfile(cfg):
-        with open(cfg, 'r') as f:
+    global config, _file_name
+    _file_name = cfg
+    if os.path.isfile(_file_name):
+        with open(_file_name, 'r') as f:
             config = json.load(f)
     else:
         config = {"api_id": None, "api_hash": None, "bot_token": None}
-        write(cfg)
+        write()
 
 
-def write(cfg):
-    logging.info(f"saving new config to {cfg}")
-    with open(cfg, 'w') as f:
-        json.dump(config, f, indent=2)
+def write():
+    logging.info(f"saving new config to {_file_name}")
+    try:
+        with open(_file_name, 'w') as f:
+            json.dump(config, f, indent=2)
+    except IOError as e:
+        logging.error(f"failed to save config: {e}")
