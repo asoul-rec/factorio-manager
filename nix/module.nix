@@ -106,8 +106,7 @@ in
           description = "Factorio manager server";
           wantedBy = [ "multi-user.target" ];
           after = [ "network.target" ];
-
-
+          preStart = "ln -sfT ${configFile} ${stateDir}/factorio.conf";
           serviceConfig = {
             Restart = "always";
             User = "factorio";
@@ -130,10 +129,7 @@ in
         systemd.services.factorio-manager-client = {
           description = "Factorio manager client";
           wantedBy = [ "multi-user.target" ];
-          after = [ "network.target" "factorio-manager-server.service" ];
-
-          preStart = "ln -sfT ${configFile} ${stateDir}/factorio.conf";
-
+          after = [ "network.target" ];
           serviceConfig = {
             Restart = "always";
             User = "factorio";
