@@ -1,4 +1,20 @@
 { config, lib, pkgs, ... }:
+/*
+
+  config example:
+
+  factorio-manager = {
+   enable = true;
+   factorioPackage = pkgs.factorio-headless-experimental;
+   botConfigPath = config.age.secrets.factorio-manager-bot.path;
+   initialGameStartArgs = [
+       "--server-settings=${config.age.secrets.factorio-server.path}"
+       "--server-adminlist=${config.age.secrets.factorio-server.path}"
+   ];
+  };
+
+
+*/
 
 with lib;
 
@@ -6,7 +22,8 @@ let
   cfg = config.services.factorio-manager;
   name = "Factorio-Manager";
   stateDir = "/var/lib/${cfg.stateDirName}";
-  configFile = pkgs.writeText "factorio.conf" ''
+
+  serverFileSuffixConf = pkgs.writeText "factorio.conf" ''
     use-system-read-write-data-directories=true
     [path]
     read-data=${cfg.factorioPackage}/share/factorio/data
@@ -44,7 +61,7 @@ in
       stateDirName = mkOption {
         type = types.str;
         default = "factorio";
-        description = lib.mdDoc ''
+        description = ''
           Name of the directory under /var/lib holding the server's data.
 
           The configuration and map will be stored here.
@@ -57,21 +74,17 @@ in
       botConfigPath = mkOption {
         type = types.str;
         default = "";
+        description = "must be set?";
       };
-      serverSettingsFile = mkOption {
-        type = types.str;
-        default = "";
-        description = lib.mdDoc ''
-          The server settings file.
+      initialGameStartArgs = mkOption {
+        type = with types; listOf str;
+        default = [ ];
+        description = ''
+          `extra_args` in client bot config file.
+          Will append --config=$\{serverFileSuffixConf} automatically.
         '';
       };
-      serverAdminsFile = mkOption {
-        type = types.str;
-        default = "";
-        description = lib.mdDoc ''
-          The server admins file.
-        '';
-      };
+
     };
   };
 
@@ -130,17 +143,28 @@ in
         systemd.services.factorio-manager-client = {
           description = "Factorio manager client";
           wantedBy = [ "multi-user.target" ];
-          after = [ "network.target" "factorio-manager-server.service" ];
-
-          preStart = "ln -sfT ${configFile} ${stateDir}/factorio.conf";
+          after = [ "network.target" ];
 
           serviceConfig = {
             Restart = "always";
             User = "factorio";
             StateDirectory = cfg.stateDirName;
+            ExecStartPre = pkgs.lib.getExe (pkgs.nuenv.writeScriptBin
+              {
+                name = "concat-cfg-parts";
+                script = ''
+                  cat ${cfg.botConfigPath} | from json | insert extra_args [
+                    "--config=${serverFileSuffixConf}"
+                    # ["foo" "bar"] => "foo"\n"bar"\n
+                    ${lib.foldl' (acc: elem: acc + "\"" + elem + "\"\n") "" cfg.initialGameStartArgs }
+                  ]
+                  | save -f ${stateDir}/client.json
+                '';
+              });
+
             ExecStart = toString [
               "${getExe' cfg.package "factorio-manager-client"}"
-              "--bot_config ${cfg.botConfigPath}"
+              "--bot_config ${stateDir}/client.json"
             ];
           } // hardeningConfig;
         };
