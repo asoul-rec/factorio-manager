@@ -16,7 +16,7 @@
       "restart": "服务器已重新启动",
       "command": "命令已发送",
       "running": "服务器正在运行",
-      "not_running": "服务器未在运行",
+      "not_running": "服务器未运行",
       "grpc_connect": "已连接到位于 {} 的gRPC服务器：{}",
       "extra_args": "Factorial的启动参数从\n{}\n更改为\n{}",
       "all_conf": "机器人配置数据如下：\n{}",
