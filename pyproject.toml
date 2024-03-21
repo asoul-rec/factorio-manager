@@ -12,8 +12,8 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-factorio-manager-server = 'server:start'
-factorio-manager-client = 'client:start'
+factorio-manager-server = 'server:__name__'
+factorio-manager-client = 'client:__name__'
 
 
 [tool.poetry.dependencies]

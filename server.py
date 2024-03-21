@@ -27,12 +27,6 @@ fac_save = os.path.join(data_dir, 'saves')
 if not os.path.isdir(fac_save):
     logging.warning(f"no 'saves' dir in the user data directory")
 
-
-def start():
-    asyncio.run(grpc_server.run(SimpleNamespace(
-        address=grpc_address, saves_dir=fac_save, fac_exec=executable
-    )))
-
-
-if __name__ == '__main__':
-    start()
+asyncio.run(grpc_server.run(SimpleNamespace(
+    address=grpc_address, saves_dir=fac_save, fac_exec=executable
+)))

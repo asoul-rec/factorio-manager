@@ -57,5 +57,4 @@ async def help_command(_, message):
     await message.reply("no help")
 
 
-if __name__ == '__main__':
-    app.run(run_app())
+app.run(run_app())
