@@ -20,7 +20,9 @@
       "grpc_connect": "已连接到位于 {} 的gRPC服务器：{}",
       "extra_args": "Factorial的启动参数从\n{}\n更改为\n{}",
       "all_conf": "机器人配置数据如下：\n{}",
-      "savelist": "服务器有以下存档（时间为游戏内时间）：\n{}"
+      "savelist": "服务器有以下存档（时间为游戏内时间）：\n{}",
+      "upload_prep": "准备上传存档 {}",
+      "uploading": "正在上传存档 {name}，大小 {total_mb:.1f}MB，进度 {percent:.1f}%"
     },
     "err": {
       "no_manager": "未设置执行端gRPC服务器",
@@ -31,6 +33,7 @@
       "no_savename": "请在参数中指定存档名称",
       "started": "服务器正在运行，请先停止服务器或重新启动服务器",
       "stopped": "服务器未在运行，命令无效",
+      "file_not_found": "未找到指定的存档",
       "unknown_failed": "执行失败，具体原因已记录到日志"
     },
     "game": {
@@ -60,7 +63,9 @@
       "grpc_connect": "咱和 {} 的gRPC服务器贴贴了！她告诉我 {}",
       "extra_args": "咱把Factorial的启动参数从\n{}\n改成\n{}\n了喵",
       "all_conf": "咱的配置数据如下：\n{}",
-      "savelist": "咱把你之前陪咱玩的内容和时长都记在小本本上了：\n{}"
+      "savelist": "咱把你之前陪咱玩的内容和时长都记在小本本上了：\n{}",
+      "upload_prep": "咱想把 {} 发给你",
+      "uploading": "咱把 {name} 发给你了，一共有 {total_mb:.1f}MB，已经发了 {percent:.1f}%"
     },
     "err": {
       "no_manager": "咱小声问一句，应该让哪个gRPC服务器干活哇",
@@ -71,6 +76,7 @@
       "no_savename": "唔（挠头）...你想让咱干啥？",
       "started": "咱就在好好干着呢，你是想让我休息还是干点别的嘛",
       "stopped": "咱就在睡觉呢，rua~",
+      "file_not_found": "诶，咱找不到你说的存档呢",
       "unknown_failed": "诶，咱不知道怎么又搞砸了，给你看看咱今天的日记（害羞x"
     },
     "game": {

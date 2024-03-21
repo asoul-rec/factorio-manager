@@ -1,3 +1,5 @@
+import logging
+
 from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams
 from .server_pb2_grpc import ServerManagerServicer
 
@@ -57,3 +59,21 @@ class ServerManager(ServerManagerServicer):
     async def GetOutputStreams(self, request, context):
         stdout, stderr = await self.daemon.get_output()
         return OutputStreams(stdout=stdout, stderr=stderr)
+
+    async def UploadToTelegram(self, request, context):
+        try:
+            progress = await self.saves.upload_tg(
+                request.save_name.name,
+                request.client.session_string,
+                request.client.chat_id,
+                request.client.reply_id if request.client.HasField("reply_id") else None
+            )
+        except FileNotFoundError:
+            yield Status(code=-1, message="Save file not found")
+            return
+        try:
+            async for current, total in progress:
+                yield Status(code=0, message=f"{current}/{total}")
+        except Exception as e:
+            logging.error(f"An error occurs during uploading: '{type(e).__name__}: {e}'")
+            yield Status(code=-2, message=f"{type(e).__name__}: {e}")

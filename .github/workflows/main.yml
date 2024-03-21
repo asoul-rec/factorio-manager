@@ -1,6 +1,9 @@
 name: Python package
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -29,3 +32,4 @@ jobs:
           python -m unittest tests.test_daemon.TestFactorioServerDaemon.test_start_stop
           python -m unittest tests.test_daemon.TestFactorioServerDaemon.test_restart
           python -m unittest tests.test_daemon.TestFactorioServerDaemon.test_get_message
+          diff grpc_client/server.proto grpc_server/server.proto

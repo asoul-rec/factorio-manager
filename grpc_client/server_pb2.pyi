@@ -75,3 +75,21 @@ class OutputStreams(_message.Message):
     stdout: bytes
     stderr: bytes
     def __init__(self, stdout: _Optional[bytes] = ..., stderr: _Optional[bytes] = ...) -> None: ...
+
+class TelegramClient(_message.Message):
+    __slots__ = ("session_string", "chat_id", "reply_id")
+    SESSION_STRING_FIELD_NUMBER: _ClassVar[int]
+    CHAT_ID_FIELD_NUMBER: _ClassVar[int]
+    REPLY_ID_FIELD_NUMBER: _ClassVar[int]
+    session_string: str
+    chat_id: int
+    reply_id: int
+    def __init__(self, session_string: _Optional[str] = ..., chat_id: _Optional[int] = ..., reply_id: _Optional[int] = ...) -> None: ...
+
+class UploadTelegramInfo(_message.Message):
+    __slots__ = ("save_name", "client")
+    SAVE_NAME_FIELD_NUMBER: _ClassVar[int]
+    CLIENT_FIELD_NUMBER: _ClassVar[int]
+    save_name: SaveName
+    client: TelegramClient
+    def __init__(self, save_name: _Optional[_Union[SaveName, _Mapping]] = ..., client: _Optional[_Union[TelegramClient, _Mapping]] = ...) -> None: ...

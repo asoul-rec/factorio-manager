@@ -12,6 +12,7 @@ service ServerManager {
   rpc InGameCommand (Command) returns (Status);
   rpc WaitForUpdates (UpdateInquiry) returns (GameUpdates);
   rpc GetOutputStreams (google.protobuf.Empty) returns (OutputStreams);
+  rpc UploadToTelegram (UploadTelegramInfo) returns (stream Status);
 }
 
 message ManagerStat {
@@ -60,4 +61,15 @@ message GameUpdates {
 message OutputStreams {
   bytes stdout = 1;
   bytes stderr = 2;
+}
+
+message TelegramClient {
+  string session_string = 1;
+  int64 chat_id = 2;
+  optional int64 reply_id = 3;
+}
+
+message UploadTelegramInfo {
+  SaveName save_name = 1;
+  TelegramClient client = 2;
 }

@@ -311,6 +311,44 @@ class FactorioHandler:
         else:
             await client.send_message(admin_id, "stderr is empty")
 
+    async def upload_save(self, client: Client, message: Message):
+        name = _strip_command(message.text)
+        if not name:
+            await message.reply(REPLIES["err"]["no_savename"])
+            return
+        logging.info(f"notify the server to upload '{name}'")
+        out_message = await message.reply(REPLIES["done"]["upload_prep"].format(name))
+        progress = self.manager.upload_to_telegram(
+            save_name=name,
+            session_string=await client.export_session_string(),
+            chat_id=message.chat.id,
+            reply_id=message.id
+        )
+
+        async def edit_progress():  # update asynchronously with delay to avoid FloodWait
+            while True:
+                await asyncio.gather(refresh.wait(), asyncio.sleep(3))
+                await out_message.edit_text(REPLIES["done"]["uploading"].format(
+                    name=name, total_mb=total, percent=current / total * 100
+                ))
+                refresh.clear()
+        refresh = asyncio.Event()
+        edit_task = asyncio.create_task(edit_progress())
+        async for pi in progress:
+            if not pi['code']:
+                current, total = [int(byte_num) / 1048576 for byte_num in pi['message'].split('/')]
+                refresh.set()
+            else:
+                if pi['code'] == -1:
+                    logging.info(f"server cannot find '{name}'")
+                    await out_message.edit_text(REPLIES["err"]["file_not_found"])
+                elif pi['code'] == -2:
+                    logging.warning(f"server get unexpected error during uploading: '{pi['message']}'")
+                    await out_message.edit_text(REPLIES["err"]["unknown_failed"])
+                return
+        edit_task.cancel()
+        await out_message.delete()
+
     # async def _push_watchdog(self):
     #     while True:
     #         if self.push_info:

@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
-from typing import Sequence, TypedDict, Optional, Literal
+from typing import Sequence, TypedDict, Optional, Literal, AsyncIterator
 import json
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
-from .server_pb2 import SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2
-from .server_pb2 import Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams
+from .server_pb2 import (
+    SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2,
+    Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams, UploadTelegramInfo, TelegramClient
+)
 from .server_pb2_grpc import ServerManagerStub
 
 
@@ -85,3 +87,13 @@ class ServerManagerClient:
         async with self._channel_stub() as stub:
             streams: OutputStreams = await stub.GetOutputStreams(Empty())
             return {'stdout': streams.stdout, 'stderr': streams.stderr}
+
+    async def upload_to_telegram(self, save_name: str, session_string: str,
+                                 chat_id: int, reply_id: Optional[int] = None) -> AsyncIterator[Status]:
+        async with self._channel_stub() as stub:
+            status_stream: AsyncIterator[StatusPB2] = stub.UploadToTelegram(UploadTelegramInfo(
+                save_name=SaveName(name=save_name),
+                client=TelegramClient(session_string=session_string, chat_id=chat_id, reply_id=reply_id)
+            ))
+            async for status in status_stream:
+                yield {"code": status.code, "message": status.message}

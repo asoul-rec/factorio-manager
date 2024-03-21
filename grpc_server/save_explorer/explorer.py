@@ -1,6 +1,7 @@
 import asyncio
 
 from .parser import load_metadata, json_stringify
+from .uploader import TelegramUploader
 import os
 
 
@@ -12,11 +13,13 @@ class SavesExplorer:
         self.path = path
         self._cache = {}
 
-    def _full_path(self, *names):
-        return os.path.join(self.path, *names)
+    async def _full_path(self, name):
+        if name not in await self.get_names():  # better way to do this sanity check?
+            raise FileNotFoundError(f"savefile {name} not found")
+        return os.path.join(self.path, name)
 
     async def load(self, name, flush_cache=False):
-        full_name = self._full_path(name)
+        full_name = await self._full_path(name)
         file_stat = os.stat(full_name)
         key = file_stat.st_mtime, file_stat.st_size
         if not flush_cache:
@@ -44,3 +47,6 @@ class SavesExplorer:
         return [name
                 for name in await asyncio.to_thread(os.listdir, self.path)
                 if name.endswith('.zip')]
+
+    async def upload_tg(self, name, session_string, chat_id, reply_id):
+        return TelegramUploader(session_string).send(await self._full_path(name), chat_id, reply_id)

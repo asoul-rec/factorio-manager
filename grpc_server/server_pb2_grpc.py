@@ -60,6 +60,11 @@ class ServerManagerStub(object):
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=grpc__server_dot_server__pb2.OutputStreams.FromString,
                 )
+        self.UploadToTelegram = channel.unary_stream(
+                '/factorio_server.ServerManager/UploadToTelegram',
+                request_serializer=grpc__server_dot_server__pb2.UploadTelegramInfo.SerializeToString,
+                response_deserializer=grpc__server_dot_server__pb2.Status.FromString,
+                )
 
 
 class ServerManagerServicer(object):
@@ -119,6 +124,12 @@ class ServerManagerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UploadToTelegram(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ServerManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -166,6 +177,11 @@ def add_ServerManagerServicer_to_server(servicer, server):
                     servicer.GetOutputStreams,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=grpc__server_dot_server__pb2.OutputStreams.SerializeToString,
+            ),
+            'UploadToTelegram': grpc.unary_stream_rpc_method_handler(
+                    servicer.UploadToTelegram,
+                    request_deserializer=grpc__server_dot_server__pb2.UploadTelegramInfo.FromString,
+                    response_serializer=grpc__server_dot_server__pb2.Status.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -327,5 +343,22 @@ class ServerManager(object):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetOutputStreams',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             grpc__server_dot_server__pb2.OutputStreams.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UploadToTelegram(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/factorio_server.ServerManager/UploadToTelegram',
+            grpc__server_dot_server__pb2.UploadTelegramInfo.SerializeToString,
+            grpc__server_dot_server__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
