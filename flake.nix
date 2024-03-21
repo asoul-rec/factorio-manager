@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     devenv.url = "github:cachix/devenv";
     poetry2nix.url = "github:nix-community/poetry2nix";
+    nuenv.url = "github:DeterminateSystems/nuenv";
   };
 
   nixConfig = {
@@ -20,10 +21,15 @@
       systems = [ "x86_64-linux" "aarch64-linux" ];
       perSystem = { config, self', inputs', pkgs, system, ... }:
         let
-          pkgs = import nixpkgs { system = "x86_64-linux"; };
           inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
         in
         {
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = with inputs;[
+              nuenv.overlays.default
+            ];
+          };
           packages.default = mkPoetryApplication {
             projectDir = ./.;
           };
@@ -39,6 +45,8 @@
               export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib"
             '';
           };
+
+          formatter = pkgs.nixpkgs-fmt;
         };
       flake = {
         nixosModules =
