@@ -33,11 +33,11 @@ in
 {
   options = {
     services.factorio-manager = {
-      enable = mkEnableOption (lib.mdDoc name);
+      enable = mkEnableOption name;
       port = mkOption {
         type = types.port;
         default = 50051;
-        description = lib.mdDoc ''
+        description = ''
           The port to which the service should bind.
         '';
       };
@@ -45,7 +45,7 @@ in
       bind = mkOption {
         type = types.str;
         default = "0.0.0.0";
-        description = lib.mdDoc ''
+        description = ''
           The address to which the service should bind.
         '';
       };
@@ -53,7 +53,7 @@ in
       openFirewall = mkOption {
         type = types.bool;
         default = false;
-        description = lib.mdDoc ''
+        description = ''
           grpc server listening.
         '';
       };
