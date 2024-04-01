@@ -1,6 +1,10 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 /*
-
   config example:
 
   factorio-manager = {
@@ -12,8 +16,6 @@
        "--server-adminlist=${config.age.secrets.factorio-server.path}"
    ];
   };
-
-
 */
 
 with lib;
@@ -29,7 +31,9 @@ let
     read-data=${cfg.factorioPackage}/share/factorio/data
     write-data=${stateDir}
   '';
+
 in
+
 {
   options = {
     services.factorio-manager = {
@@ -70,7 +74,9 @@ in
       package = mkOption {
         defaultText = lib.literalMD "`packages.default` from this flake";
       };
-      factorioPackage = mkPackageOption pkgs "factorio-headless" { };
+      factorioPackage = mkOption {
+        defaultText = lib.literalMD "`pkgs.factorio-headless` from nixpkgs";
+      }; # *-experimental reported weird error
       botConfigPath = mkOption {
         type = types.str;
         default = "";
@@ -84,91 +90,93 @@ in
           Will append --config=$\{serverFileSuffixConf} automatically.
         '';
       };
-
     };
   };
 
-  config = mkIf cfg.enable
-    (
-      let
-        hardeningConfig =
-          {
-            # Sandboxing
-            NoNewPrivileges = true;
-            PrivateTmp = true;
-            PrivateDevices = true;
-            ProtectSystem = "strict";
-            ProtectHome = true;
-            ProtectControlGroups = true;
-            ProtectKernelModules = true;
-            ProtectKernelTunables = true;
-            RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" "AF_NETLINK" ];
-            RestrictRealtime = true;
-            RestrictNamespaces = true;
-            MemoryDenyWriteExecute = true;
-          };
-      in
-      {
-        users.users.factorio = {
-          group = "factorio";
-          isSystemUser = true;
-        };
-        users.groups.factorio = { };
+  config = mkIf cfg.enable (
+    let
+      hardeningConfig = {
+        # Sandboxing
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        ProtectControlGroups = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+          "AF_NETLINK"
+        ];
+        RestrictRealtime = true;
+        RestrictNamespaces = true;
+        MemoryDenyWriteExecute = true;
+      };
+    in
+    {
+      users.users.factorio = {
+        group = "factorio";
+        isSystemUser = true;
+      };
+      users.groups.factorio = { };
 
-        systemd.services.factorio-manager-server = {
-          description = "Factorio manager server";
-          wantedBy = [ "multi-user.target" ];
-          after = [ "network.target" ];
+      systemd.services.factorio-manager-server = {
+        description = "Factorio manager server";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
 
+        serviceConfig = {
+          Restart = "always";
+          User = "factorio";
+          Environment = [ "FACTORIO_MANAGER_DEBUG=1" ];
+          StateDirectory = cfg.stateDirName;
+          KillMode = "mixed";
+          TimeoutStopSec = 30;
+          KillSignal = "SIGINT";
+          SendSIGKILL = "yes";
+          ExecStart = toString [
+            "${cfg.package}factorio-manager-server"
+            "--executable ${cfg.factorioPackage}/bin/factorio"
+            "--data-dir ${stateDir}"
+            "--port ${toString cfg.port}"
+            "--host ${cfg.bind}"
+          ];
+        } // hardeningConfig;
+      };
 
-          serviceConfig = {
-            Restart = "always";
-            User = "factorio";
-            Environment = [ "FACTORIO_MANAGER_DEBUG=1" ];
-            StateDirectory = cfg.stateDirName;
-            KillMode = "mixed";
-            TimeoutStopSec = 30;
-            KillSignal = "SIGINT";
-            SendSIGKILL = "yes";
-            ExecStart = toString [
-              "${getExe' cfg.package "factorio-manager-server"}"
-              "--executable ${getExe' cfg.factorioPackage "factorio"}"
-              "--data-dir ${stateDir}"
-              "--port ${toString cfg.port}"
-              "--host ${cfg.bind}"
-            ];
-          } // hardeningConfig;
-        };
+      systemd.services.factorio-manager-client = {
+        description = "Factorio manager client";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
 
-        systemd.services.factorio-manager-client = {
-          description = "Factorio manager client";
-          wantedBy = [ "multi-user.target" ];
-          after = [ "network.target" ];
+        serviceConfig = {
+          Restart = "always";
+          User = "factorio";
+          StateDirectory = cfg.stateDirName;
+          ExecStartPre = (
+            pkgs.nuenv.writeScriptBin {
+              name = "concat-cfg-parts";
+              script = ''
+                cat ${cfg.botConfigPath} | from json | insert extra_args [
+                  "--config=${serverFileSuffixConf}"
+                  # ["foo" "bar"] => "foo"\n"bar"\n
+                  ${lib.concatMapStringsSep "\n" (n: "\"${n}\"") cfg.initialGameStartArgs}
+                ]
+                | save -f ${stateDir}/client.json
+              '';
+            }
+          );
 
-          serviceConfig = {
-            Restart = "always";
-            User = "factorio";
-            StateDirectory = cfg.stateDirName;
-            ExecStartPre = pkgs.lib.getExe (pkgs.nuenv.writeScriptBin
-              {
-                name = "concat-cfg-parts";
-                script = ''
-                  cat ${cfg.botConfigPath} | from json | insert extra_args [
-                    "--config=${serverFileSuffixConf}"
-                    # ["foo" "bar"] => "foo"\n"bar"\n
-                    ${lib.foldl' (acc: elem: acc + "\"" + elem + "\"\n") "" cfg.initialGameStartArgs }
-                  ]
-                  | save -f ${stateDir}/client.json
-                '';
-              });
-
-            ExecStart = toString [
-              "${getExe' cfg.package "factorio-manager-client"}"
-              "--bot_config ${stateDir}/client.json"
-            ];
-          } // hardeningConfig;
-        };
-        networking.firewall.allowedUDPPorts = optional cfg.openFirewall cfg.port;
-      }
-    );
+          ExecStart = toString [
+            "${cfg.package}/bin/factorio-manager-client"
+            "--bot_config ${stateDir}/client.json"
+          ];
+        } // hardeningConfig;
+      };
+      networking.firewall.allowedUDPPorts = optional cfg.openFirewall cfg.port;
+    }
+  );
 }
