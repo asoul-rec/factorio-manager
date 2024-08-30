@@ -76,6 +76,12 @@ class FactorioServerDaemon:
     message_new: Event
 
     def __init__(self, executable, timeout=10, logs_maxlen=None, message_maxlen=None):
+        """
+        :param executable: path to the Factorio starter
+        :param timeout: max waiting time for starting and (gracefully) stopping the server
+        :param logs_maxlen: size of process raw output history
+        :param message_maxlen: size of message buffer for TG forward long polling
+        """
         self._process_info = self.Info()
         self.executable = executable
         self.global_timeout = timeout
@@ -86,19 +92,22 @@ class FactorioServerDaemon:
                          for stream_name in ['stdout', 'stderr']}
         self._set_monitor_callback()  # it's safe to set callback of the monitor after initialization
 
-    async def _daemon(self, args):
-        # starting
+    async def _start_factorio_subprocess(self, args: list[str]):
         kwargs = {'stdin':  asyncio.subprocess.PIPE,
                   'stdout': asyncio.subprocess.PIPE,
                   'stderr': asyncio.subprocess.PIPE}
+        if os.name == 'nt':
+            logging.debug(f"starting the server with detached cmd as wrapper, cmd={_cmd_path()}")
+            kwargs["creationflags"] = subprocess.DETACHED_PROCESS
+            return await asyncio.create_subprocess_exec(_cmd_path(), '/C', self.executable, *args, **kwargs)
+        else:
+            logging.debug("starting the server as a subprocess directly")
+            return await asyncio.create_subprocess_exec(self.executable, *args, **kwargs)
+
+    async def _daemon(self, args):
+        # starting
         try:
-            if os.name == 'nt':
-                logging.debug(f"starting the server with detached cmd as wrapper, cmd={_cmd_path()}")
-                kwargs["creationflags"] = subprocess.DETACHED_PROCESS
-                self.process = await asyncio.create_subprocess_exec(_cmd_path(), '/C', self.executable, *args, **kwargs)
-            else:
-                logging.debug("starting the server as a subprocess directly")
-                self.process = await asyncio.create_subprocess_exec(self.executable, *args, **kwargs)
+            self.process = await self._start_factorio_subprocess(args)
         except OSError as e:
             self._process_info.error = {"code": BAD_ARG, "message": f"Cannot start server. {type(e).__name__}: {e}"}
             return
@@ -136,7 +145,7 @@ class FactorioServerDaemon:
 
     @contextmanager
     def _changing_state(self, code):
-        """similar to a lock, but fail rather than wait for release when occupied"""
+        """Non-blocking lock. Available: None, Occupied: {code: old_code, message: starting/stopping}"""
         if (old_code := self._process_info.changing) is None:
             self._process_info.changing = code
             yield
@@ -295,3 +304,33 @@ class FactorioServerDaemon:
 
     async def get_output(self) -> tuple[bytes, bytes]:
         return b''.join(self._monitor['stdout'].history), b''.join(self._monitor['stderr'].history)
+
+    async def get_game_version(self) -> Optional[str]:
+        try:
+            process = await self._start_factorio_subprocess(["--version"])
+            _, pending = await asyncio.wait([asyncio.create_task(process.wait())], timeout=0.1)
+            if pending:
+                process.kill()
+            stdout = await process.stdout.read()
+            stderr = await process.stderr.read()
+        except OSError as e:
+            logging.error(f"Fail to start the factorio process to get its version. {type(e).__name__}: {e}")
+            return
+
+        if not process.returncode and stdout.startswith(b"Version:") and stderr == b"":
+            try:
+                return stdout.decode("ascii")
+            except UnicodeDecodeError:
+                pass
+
+        # log the error info when the version is not correctly reported
+        err_info = [f"exit_code={process.returncode}"]
+        if stdout:
+            err_info.append(f"{stdout=}")
+        if stderr:
+            err_info.append(f"{stderr=}")
+        logging.error(f"Factorio fails to report version: {', '.join(err_info)}")
+
+    def get_current_args(self) -> Optional[list[str]]:
+        if self.process is not None:
+            return self._process_info.args

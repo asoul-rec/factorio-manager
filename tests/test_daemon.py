@@ -19,10 +19,6 @@ class TestFactorioServerDaemon(TestCase):
         cls.loop = asyncio.new_event_loop()
         super().setUpClass()
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     cls.loop.run_until_complete(asyncio.sleep(1))
-
     def test_start_stop(self):
         factorio_help = "Path where server ID will be stored or read"
 
@@ -194,3 +190,33 @@ class TestFactorioServerDaemon(TestCase):
         self.loop.run_until_complete(test())
         self.assertIsNone(next(exp1, None))
         self.assertIsNone(next(exp2, None))
+
+    def test_get_version(self):
+        async def test():
+            fac = FactorioServerDaemon(self.executable)
+            version_str = await fac.get_game_version()
+            str_list = version_str.splitlines()
+            self.assertRegex(str_list[0], r"^Version: \d\.\d\.\d+ \(build \d+, \w+, \w+\)$")
+            self.assertEqual(len(str_list), 4)
+            await fac.start(['--start-server', self.savefile])
+            self.assertEqual(await fac.get_game_version(), version_str)
+            await fac.stop()
+            self.assertEqual(await fac.get_game_version(), version_str)
+        self.loop.run_until_complete(test())
+
+    def test_get_current_args(self):
+        async def test():
+            fac = FactorioServerDaemon(self.executable)
+            self.assertIsNone(fac.get_current_args())
+            input_args = ['--start-server', self.savefile]
+            await fac.start(input_args)
+            self.assertEqual(fac.get_current_args(), input_args)
+            await fac.get_game_version()  # should not change the current args
+            self.assertEqual(fac.get_current_args(), input_args)
+            await fac.stop()
+            self.assertIsNone(fac.get_current_args())
+            await fac.start(['--version'])
+            self.assertIsNone(fac.process)  # should be terminated automatically
+            self.assertIsNone(fac.get_current_args())
+
+        self.loop.run_until_complete(test())
