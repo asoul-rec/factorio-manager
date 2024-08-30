@@ -24,7 +24,8 @@ Part 1. and 2. can be deployed on different machines or on the same machine.
    1. [x] connect to server manager
    2. ~~connect to factorio with rcon~~ (use custom grpc functions to support in-game command)
 3. [ ] tg bot frontend
-   1. [ ] \* easy interface to set configurations
+   1. [x] easy interface to set configurations
    2. [x] basic function: switch saves. show save metadata to choose the correct one
    3. [x] realtime chat and status with long polling / message forwarding
-   4. [ ] \* advanced in game commands. The easiest way is just transfer the raw command. How to dump the response as string in lua? (especially when an error occurs)
+   4. [x] run in-game commands (just transfer the raw command).
+   5. [ ] process the response of the in-game commands (as string in lua? how to deal with it when an error occurs?)
