@@ -308,7 +308,7 @@ class FactorioServerDaemon:
     async def get_game_version(self) -> Optional[str]:
         try:
             process = await self._start_factorio_subprocess(["--version"])
-            _, pending = await asyncio.wait([asyncio.create_task(process.wait())], timeout=0.1)
+            _, pending = await asyncio.wait([asyncio.create_task(process.wait())], timeout=1)
             if pending:
                 process.kill()
             stdout = await process.stdout.read()
@@ -317,14 +317,17 @@ class FactorioServerDaemon:
             logging.error(f"Fail to start the factorio process to get its version. {type(e).__name__}: {e}")
             return
 
-        if not process.returncode and stdout.startswith(b"Version:") and stderr == b"":
+        exit_code = process.returncode
+        if exit_code == 0 and stdout.startswith(b"Version:") and stderr == b"":
             try:
                 return stdout.decode("ascii")
             except UnicodeDecodeError:
                 pass
 
         # log the error info when the version is not correctly reported
-        err_info = [f"exit_code={process.returncode}"]
+        err_info = []
+        if exit_code is not None:
+            err_info.append(f"{exit_code=}")
         if stdout:
             err_info.append(f"{stdout=}")
         if stderr:

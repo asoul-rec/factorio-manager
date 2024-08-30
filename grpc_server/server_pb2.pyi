@@ -7,12 +7,16 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ManagerStat(_message.Message):
-    __slots__ = ("welcome", "running")
+    __slots__ = ("welcome", "running", "game_version", "current_save")
     WELCOME_FIELD_NUMBER: _ClassVar[int]
     RUNNING_FIELD_NUMBER: _ClassVar[int]
+    GAME_VERSION_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_SAVE_FIELD_NUMBER: _ClassVar[int]
     welcome: str
     running: bool
-    def __init__(self, welcome: _Optional[str] = ..., running: bool = ...) -> None: ...
+    game_version: str
+    current_save: SaveName
+    def __init__(self, welcome: _Optional[str] = ..., running: bool = ..., game_version: _Optional[str] = ..., current_save: _Optional[_Union[SaveName, _Mapping]] = ...) -> None: ...
 
 class SaveNameList(_message.Message):
     __slots__ = ("save_name",)

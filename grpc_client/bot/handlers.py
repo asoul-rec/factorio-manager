@@ -14,7 +14,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.errors import BadRequest
 from pyrogram.raw.types import InputPeerChannel
 from grpc_client.bot import config
-from grpc_client.grpc_methods import ServerManagerClient
+from grpc_client.grpc_methods import ServerManagerClient, ManagerStat
 import grpc
 from .replies import REPLIES
 
@@ -38,6 +38,16 @@ def _strip_command(s: str) -> str:
     if s.startswith('/'):
         s = ''.join(s.split(maxsplit=1)[1:])
     return s
+
+
+def _format_status(status: ManagerStat):
+    replies = [
+        REPLIES["done"]["running" if status.running else "not_running"],
+        REPLIES["done"]["fac_version"].format(status.game_version),
+    ]
+    if status.running and status.HasField("current_save"):
+        replies.append(REPLIES["done"]["current_save"].format(status.current_save.name))
+    return '\n'.join(replies)
 
 
 async def set_chat_id(client: Client, message: Message):
@@ -93,10 +103,13 @@ async def set_address(_, message: Message):
         return
     client = ServerManagerClient(address)
     try:
-        _, welcome = await client.get_manager_status()
+        status = await client.get_manager_status()
         config.config["address"] = address
         config.write()
-        await message.reply(REPLIES["done"]["grpc_connect"].format(address, welcome))
+        await message.reply(
+            REPLIES["done"]["grpc_connect"].format(address, status.welcome) + '\n' +
+            + _format_status(status)
+        )
     except grpc.aio.AioRpcError as e:
         logging.error(f"{type(e).__name__}: {e.debug_error_string()}")
         await message.reply(REPLIES["err"]["bad_manager"].format(address))
@@ -208,8 +221,8 @@ class FactorioHandler:
             if code == SATISFIED:
                 await message.reply(REPLIES["err"]["stopped"])
             else:
-                running, _ = await self.manager.get_manager_status()
-                if not running:  # don't care why it's stopped on client side
+                status = await self.manager.get_manager_status()
+                if not status.running:  # don't care why it's stopped on client side
                     await message.reply(REPLIES["err"]["stopped"])
                 else:
                     await message.reply(REPLIES["err"]["unknown_failed"])
@@ -238,8 +251,8 @@ class FactorioHandler:
 
     @check_manager
     async def running_status(self, _, message: Message):
-        running, _ = await self.manager.get_manager_status()
-        await message.reply(REPLIES["done"]["running" if running else "not_running"])
+        status = await self.manager.get_manager_status()
+        await message.reply(_format_status(status))
 
     @check_manager
     async def run_command(self, _, message: Message):

@@ -36,10 +36,9 @@ class ServerManagerClient:
         async with grpc.aio.insecure_channel(self.address) as channel:
             yield ServerManagerStub(channel)
 
-    async def get_manager_status(self) -> tuple[bool, str]:
+    async def get_manager_status(self) -> ManagerStat:
         async with self._channel_stub() as stub:
-            status: ManagerStat = await stub.GetManagerStatus(Empty())
-            return status.running, status.welcome
+            return await stub.GetManagerStatus(Empty())
 
     async def get_all_save_name(self) -> list[str]:
         async with self._channel_stub() as stub:

@@ -18,6 +18,8 @@ service ServerManager {
 message ManagerStat {
   string welcome = 1;
   bool running = 2;
+  string game_version = 3;
+  optional SaveName current_save = 4;
 }
 
 message SaveNameList {
