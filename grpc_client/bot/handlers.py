@@ -103,7 +103,7 @@ async def set_address(_, message: Message):
         return
     client = ServerManagerClient(address)
     try:
-        status = await client.get_manager_status()
+        status = await client.get_manager_status(verbose=True)
         config.config["address"] = address
         config.write()
         await message.reply(
@@ -251,7 +251,7 @@ class FactorioHandler:
 
     @check_manager
     async def running_status(self, _, message: Message):
-        status = await self.manager.get_manager_status()
+        status = await self.manager.get_manager_status(verbose=True)
         await message.reply(_format_status(status))
 
     @check_manager
@@ -345,6 +345,7 @@ class FactorioHandler:
                     name=name, total_mb=total, percent=current / total * 100
                 ))
                 refresh.clear()
+
         refresh = asyncio.Event()
         edit_task = asyncio.create_task(edit_progress())
         async for pi in progress:

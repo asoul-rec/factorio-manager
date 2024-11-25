@@ -15,19 +15,20 @@ class ServerManager(ServerManagerServicer):
 
     async def GetManagerStatus(self, request, context):
         is_running = self.daemon.process is not None
-        current_save = None
-        if is_running:
-            run_args = self.daemon.get_current_args()
-            try:
-                current_save = run_args[run_args.index('--start-server') + 1]
-                current_save = SaveName(name=current_save)
-            except (ValueError, IndexError, AttributeError):
-                pass
+        current_save = game_version = None
+        if request.verbose:
+            game_version = await self.daemon.get_game_version()
+            if is_running:
+                run_args = self.daemon.get_current_args()
+                try:
+                    current_save = SaveName(name=run_args[run_args.index('--start-server') + 1])
+                except (ValueError, IndexError, AttributeError):
+                    pass
 
         return ManagerStat(
             welcome=self.welcome,
             running=is_running,
-            game_version=await self.daemon.get_game_version(),
+            game_version=game_version,
             current_save=current_save
         )
 

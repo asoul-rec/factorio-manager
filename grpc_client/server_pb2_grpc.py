@@ -17,7 +17,7 @@ class ServerManagerStub(object):
         """
         self.GetManagerStatus = channel.unary_unary(
                 '/factorio_server.ServerManager/GetManagerStatus',
-                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                request_serializer=grpc__client_dot_server__pb2.Ping.SerializeToString,
                 response_deserializer=grpc__client_dot_server__pb2.ManagerStat.FromString,
                 )
         self.GetAllSaveName = channel.unary_unary(
@@ -135,7 +135,7 @@ def add_ServerManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetManagerStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.GetManagerStatus,
-                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    request_deserializer=grpc__client_dot_server__pb2.Ping.FromString,
                     response_serializer=grpc__client_dot_server__pb2.ManagerStat.SerializeToString,
             ),
             'GetAllSaveName': grpc.unary_unary_rpc_method_handler(
@@ -205,7 +205,7 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetManagerStatus',
-            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            grpc__client_dot_server__pb2.Ping.SerializeToString,
             grpc__client_dot_server__pb2.ManagerStat.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

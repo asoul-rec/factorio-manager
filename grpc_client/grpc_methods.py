@@ -5,7 +5,7 @@ import json
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from .server_pb2 import (
-    SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2,
+    Ping, SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2,
     Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams, UploadTelegramInfo, TelegramClient
 )
 from .server_pb2_grpc import ServerManagerStub
@@ -36,9 +36,9 @@ class ServerManagerClient:
         async with grpc.aio.insecure_channel(self.address) as channel:
             yield ServerManagerStub(channel)
 
-    async def get_manager_status(self) -> ManagerStat:
+    async def get_manager_status(self, verbose=False) -> ManagerStat:
         async with self._channel_stub() as stub:
-            return await stub.GetManagerStatus(Empty())
+            return await stub.GetManagerStatus(Ping(verbose=verbose))
 
     async def get_all_save_name(self) -> list[str]:
         async with self._channel_stub() as stub:

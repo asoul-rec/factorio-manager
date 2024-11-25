@@ -3,7 +3,7 @@ import "google/protobuf/empty.proto";
 package factorio_server;
 
 service ServerManager {
-  rpc GetManagerStatus (google.protobuf.Empty) returns (ManagerStat);
+  rpc GetManagerStatus (Ping) returns (ManagerStat);
   rpc GetAllSaveName (google.protobuf.Empty) returns (SaveNameList);
   rpc GetStatByName (SaveName) returns (SaveStat);
   rpc StopServer (google.protobuf.Empty) returns (Status);
@@ -13,6 +13,10 @@ service ServerManager {
   rpc WaitForUpdates (UpdateInquiry) returns (GameUpdates);
   rpc GetOutputStreams (google.protobuf.Empty) returns (OutputStreams);
   rpc UploadToTelegram (UploadTelegramInfo) returns (stream Status);
+}
+
+message Ping {
+  bool verbose = 1;
 }
 
 message ManagerStat {

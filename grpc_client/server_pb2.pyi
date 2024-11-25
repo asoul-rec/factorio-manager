@@ -6,6 +6,12 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class Ping(_message.Message):
+    __slots__ = ("verbose",)
+    VERBOSE_FIELD_NUMBER: _ClassVar[int]
+    verbose: bool
+    def __init__(self, verbose: bool = ...) -> None: ...
+
 class ManagerStat(_message.Message):
     __slots__ = ("welcome", "running", "game_version", "current_save")
     WELCOME_FIELD_NUMBER: _ClassVar[int]
