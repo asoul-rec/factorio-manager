@@ -105,6 +105,8 @@ class FactorioServerDaemon:
             return await asyncio.create_subprocess_exec(self.executable, *args, **kwargs)
 
     async def _daemon(self, args):
+        if self.is_running:
+            logging.warning("The old subprocess is still running and will get unmanaged.")
         # starting
         try:
             self.process = await self._start_factorio_subprocess(args)
@@ -154,12 +156,16 @@ class FactorioServerDaemon:
             yield {"code":    old_code,
                    "message": {STARTING: "The server is starting.", STOPPING: "The server is stopping."}[old_code]}
 
+    @property
+    def is_running(self):
+        return self.process is not None and self.process.returncode is None
+
     async def start(self, args) -> Status:
         with self._changing_state(STARTING) as error:
             # abort in invalid states
             if error is not None:
                 return error
-            if self.process is not None:
+            if self.is_running:
                 if (error := self._process_info.error) is not None:
                     return error
                 return {"code": SATISFIED, "message": "The server is already running."}
@@ -197,7 +203,7 @@ class FactorioServerDaemon:
             # abort in invalid states
             if error is not None:
                 return error
-            if self.process is None or self.process.returncode:  # do nothing if stopped
+            if not self.is_running:
                 if (error := self._process_info.error) is not None:
                     return error
                 return {"code": SATISFIED, "message": "The server is already stopped."}

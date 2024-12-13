@@ -14,7 +14,7 @@ class ServerManager(ServerManagerServicer):
         self.welcome = welcome_message
 
     async def GetManagerStatus(self, request, context):
-        is_running = self.daemon.process is not None
+        is_running = self.daemon.is_running
         current_save = game_version = None
         if request.verbose:
             game_version = await self.daemon.get_game_version()
