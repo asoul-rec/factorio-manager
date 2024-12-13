@@ -5,23 +5,18 @@ description = ""
 authors = ["asoul-rec <asoulranbi@gmail.com>"]
 readme = "README.md"
 packages = [
-    {include = "client.py"},
-    {include = "server.py"},
-    {include = "grpc_server"},
-    {include = "grpc_client"}
+    {include = "facmgr"}
 ]
 
-[tool.poetry.scripts]
-factorio-manager-server = 'server:__name__'
-factorio-manager-client = 'client:__name__'
-
+# [tool.poetry.scripts]
+# factorio-manager-server = 'server:__name__'
 
 [tool.poetry.dependencies]
-python = "^3.11"
-grpcio = "^1.60.0"
-grpcio-tools = "^1.60.0"
-pyrogram = "^2.0.106"
-tgcrypto = "^1.2.5"
+python = "^3.13"
+grpcio = "^1.68.0"
+grpcio-tools = "^1.68.0"
+pyrofork = "^2.3.50"
+TgCrypto = "^1.2.5"
 
 [build-system]
 requires = ["poetry-core"]

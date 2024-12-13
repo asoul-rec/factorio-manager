@@ -4,11 +4,11 @@ import json
 
 import grpc
 from google.protobuf.empty_pb2 import Empty
-from .server_pb2 import (
+from ..protobuf.facmgr_pb2 import (
     Ping, SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2,
     Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams, UploadTelegramInfo, TelegramClient
 )
-from .server_pb2_grpc import ServerManagerStub
+from ..protobuf.facmgr_pb2_grpc import ServerManagerStub
 
 
 class SaveStat(TypedDict):

@@ -2,8 +2,8 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
+from facmgr.protobuf import facmgr_pb2 as facmgr_dot_protobuf_dot_facmgr__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
-from grpc_client import server_pb2 as grpc__client_dot_server__pb2
 
 
 class ServerManagerStub(object):
@@ -17,53 +17,53 @@ class ServerManagerStub(object):
         """
         self.GetManagerStatus = channel.unary_unary(
                 '/factorio_server.ServerManager/GetManagerStatus',
-                request_serializer=grpc__client_dot_server__pb2.Ping.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.ManagerStat.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Ping.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.ManagerStat.FromString,
                 )
         self.GetAllSaveName = channel.unary_unary(
                 '/factorio_server.ServerManager/GetAllSaveName',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.SaveNameList.FromString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.SaveNameList.FromString,
                 )
         self.GetStatByName = channel.unary_unary(
                 '/factorio_server.ServerManager/GetStatByName',
-                request_serializer=grpc__client_dot_server__pb2.SaveName.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.SaveStat.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.SaveName.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.SaveStat.FromString,
                 )
         self.StopServer = channel.unary_unary(
                 '/factorio_server.ServerManager/StopServer',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.Status.FromString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
                 )
         self.StartServerByName = channel.unary_unary(
                 '/factorio_server.ServerManager/StartServerByName',
-                request_serializer=grpc__client_dot_server__pb2.ServerOptions.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.Status.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.ServerOptions.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
                 )
         self.RestartServer = channel.unary_unary(
                 '/factorio_server.ServerManager/RestartServer',
-                request_serializer=grpc__client_dot_server__pb2.ServerOptions.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.Status.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.ServerOptions.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
                 )
         self.InGameCommand = channel.unary_unary(
                 '/factorio_server.ServerManager/InGameCommand',
-                request_serializer=grpc__client_dot_server__pb2.Command.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.Status.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Command.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
                 )
         self.WaitForUpdates = channel.unary_unary(
                 '/factorio_server.ServerManager/WaitForUpdates',
-                request_serializer=grpc__client_dot_server__pb2.UpdateInquiry.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.GameUpdates.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.UpdateInquiry.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.GameUpdates.FromString,
                 )
         self.GetOutputStreams = channel.unary_unary(
                 '/factorio_server.ServerManager/GetOutputStreams',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.OutputStreams.FromString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.OutputStreams.FromString,
                 )
         self.UploadToTelegram = channel.unary_stream(
                 '/factorio_server.ServerManager/UploadToTelegram',
-                request_serializer=grpc__client_dot_server__pb2.UploadTelegramInfo.SerializeToString,
-                response_deserializer=grpc__client_dot_server__pb2.Status.FromString,
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.UploadTelegramInfo.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
                 )
 
 
@@ -135,53 +135,53 @@ def add_ServerManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetManagerStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.GetManagerStatus,
-                    request_deserializer=grpc__client_dot_server__pb2.Ping.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.ManagerStat.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Ping.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.ManagerStat.SerializeToString,
             ),
             'GetAllSaveName': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAllSaveName,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.SaveNameList.SerializeToString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.SaveNameList.SerializeToString,
             ),
             'GetStatByName': grpc.unary_unary_rpc_method_handler(
                     servicer.GetStatByName,
-                    request_deserializer=grpc__client_dot_server__pb2.SaveName.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.SaveStat.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.SaveName.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.SaveStat.SerializeToString,
             ),
             'StopServer': grpc.unary_unary_rpc_method_handler(
                     servicer.StopServer,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.Status.SerializeToString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.SerializeToString,
             ),
             'StartServerByName': grpc.unary_unary_rpc_method_handler(
                     servicer.StartServerByName,
-                    request_deserializer=grpc__client_dot_server__pb2.ServerOptions.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.Status.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.ServerOptions.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.SerializeToString,
             ),
             'RestartServer': grpc.unary_unary_rpc_method_handler(
                     servicer.RestartServer,
-                    request_deserializer=grpc__client_dot_server__pb2.ServerOptions.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.Status.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.ServerOptions.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.SerializeToString,
             ),
             'InGameCommand': grpc.unary_unary_rpc_method_handler(
                     servicer.InGameCommand,
-                    request_deserializer=grpc__client_dot_server__pb2.Command.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.Status.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Command.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.SerializeToString,
             ),
             'WaitForUpdates': grpc.unary_unary_rpc_method_handler(
                     servicer.WaitForUpdates,
-                    request_deserializer=grpc__client_dot_server__pb2.UpdateInquiry.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.GameUpdates.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.UpdateInquiry.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.GameUpdates.SerializeToString,
             ),
             'GetOutputStreams': grpc.unary_unary_rpc_method_handler(
                     servicer.GetOutputStreams,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.OutputStreams.SerializeToString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.OutputStreams.SerializeToString,
             ),
             'UploadToTelegram': grpc.unary_stream_rpc_method_handler(
                     servicer.UploadToTelegram,
-                    request_deserializer=grpc__client_dot_server__pb2.UploadTelegramInfo.FromString,
-                    response_serializer=grpc__client_dot_server__pb2.Status.SerializeToString,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.UploadTelegramInfo.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -205,8 +205,8 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetManagerStatus',
-            grpc__client_dot_server__pb2.Ping.SerializeToString,
-            grpc__client_dot_server__pb2.ManagerStat.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Ping.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.ManagerStat.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -223,7 +223,7 @@ class ServerManager(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetAllSaveName',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            grpc__client_dot_server__pb2.SaveNameList.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.SaveNameList.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -239,8 +239,8 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetStatByName',
-            grpc__client_dot_server__pb2.SaveName.SerializeToString,
-            grpc__client_dot_server__pb2.SaveStat.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.SaveName.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.SaveStat.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -257,7 +257,7 @@ class ServerManager(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/StopServer',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            grpc__client_dot_server__pb2.Status.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -273,8 +273,8 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/StartServerByName',
-            grpc__client_dot_server__pb2.ServerOptions.SerializeToString,
-            grpc__client_dot_server__pb2.Status.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.ServerOptions.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -290,8 +290,8 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/RestartServer',
-            grpc__client_dot_server__pb2.ServerOptions.SerializeToString,
-            grpc__client_dot_server__pb2.Status.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.ServerOptions.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -307,8 +307,8 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/InGameCommand',
-            grpc__client_dot_server__pb2.Command.SerializeToString,
-            grpc__client_dot_server__pb2.Status.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Command.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -324,8 +324,8 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/WaitForUpdates',
-            grpc__client_dot_server__pb2.UpdateInquiry.SerializeToString,
-            grpc__client_dot_server__pb2.GameUpdates.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.UpdateInquiry.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.GameUpdates.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -342,7 +342,7 @@ class ServerManager(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/factorio_server.ServerManager/GetOutputStreams',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            grpc__client_dot_server__pb2.OutputStreams.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.OutputStreams.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -358,7 +358,7 @@ class ServerManager(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/factorio_server.ServerManager/UploadToTelegram',
-            grpc__client_dot_server__pb2.UploadTelegramInfo.SerializeToString,
-            grpc__client_dot_server__pb2.Status.FromString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.UploadTelegramInfo.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

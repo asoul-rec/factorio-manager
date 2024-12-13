@@ -1,11 +1,10 @@
 import argparse
-import asyncio
 import logging
 
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode
 
-from grpc_client import bot
+from . import bot
 
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.DEBUG)
 logging.getLogger('pyrogram').setLevel(logging.INFO)

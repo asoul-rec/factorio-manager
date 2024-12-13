@@ -2,8 +2,7 @@ import argparse
 import asyncio
 import logging
 import os
-from types import SimpleNamespace
-import grpc_server
+from . import server
 
 logging_level = logging.DEBUG if os.environ.get('FACTORIO_MANAGER_DEBUG', False) else logging.INFO
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging_level)
@@ -27,6 +26,6 @@ fac_save = os.path.join(data_dir, 'saves')
 if not os.path.isdir(fac_save):
     logging.warning(f"no 'saves' dir in the user data directory")
 
-asyncio.run(grpc_server.run(SimpleNamespace(
+asyncio.run(server.run(server.Config(
     address=grpc_address, saves_dir=fac_save, fac_exec=executable
 )))

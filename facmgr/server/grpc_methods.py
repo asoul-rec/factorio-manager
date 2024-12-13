@@ -1,7 +1,7 @@
 import logging
 
-from .server_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams
-from .server_pb2_grpc import ServerManagerServicer
+from ..protobuf.facmgr_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams
+from ..protobuf.facmgr_pb2_grpc import ServerManagerServicer
 
 from .save_explorer import SavesExplorer
 from . import daemon

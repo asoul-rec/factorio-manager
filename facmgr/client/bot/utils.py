@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from . import config, handlers, filters as my_filters
 from .replies import REPLIES

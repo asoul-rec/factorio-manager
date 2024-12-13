@@ -30,4 +30,8 @@ jobs:
           export executable=$(realpath -s ~/factorio/bin/x64/factorio)
           export savefile=$(realpath -s ~/factorio/saves/test.zip)
           python -m unittest tests.test_daemon
-          diff grpc_client/server.proto grpc_server/server.proto
+      - name: Check protobuf consistency
+        run: |
+          cp -a facmgr/protobuf ./protobuf_bak
+          python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. facmgr/protobuf/facmgr.proto
+          diff -r facmgr/protobuf ./protobuf_bak

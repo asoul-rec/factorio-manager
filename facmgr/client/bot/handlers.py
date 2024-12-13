@@ -13,8 +13,8 @@ from pyrogram.types import Message
 from pyrogram.enums import ParseMode
 from pyrogram.errors import BadRequest
 from pyrogram.raw.types import InputPeerChannel
-from grpc_client.bot import config
-from grpc_client.grpc_methods import ServerManagerClient, ManagerStat
+from . import config
+from ..grpc_methods import ServerManagerClient, ManagerStat
 import grpc
 from .replies import REPLIES
 
