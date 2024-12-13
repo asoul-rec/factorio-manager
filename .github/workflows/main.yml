@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
-        factorio-version: ["1.1.109", "1.1.110"]
+        python-version: ["3.13"]
+        factorio-version: ["2.0.23"]
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
           wget https://www.factorio.com/get-download/${{ matrix.factorio-version }}/headless/linux64 -O ~/factorio.tar.xz
           tar -xf ~/factorio.tar.xz -C ~
           ~/factorio/bin/x64/factorio --create ~/factorio/saves/test.zip
-          pip install grpcio grpcio-tools
+          pip install grpcio==1.68.0 grpcio-tools==1.68.0
       - name: Run unittest
         run: |
           export executable=$(realpath -s ~/factorio/bin/x64/factorio)
