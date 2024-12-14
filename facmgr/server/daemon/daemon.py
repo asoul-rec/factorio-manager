@@ -156,6 +156,8 @@ class FactorioServerDaemon:
             raise
         finally:
             if self.process.returncode is None:
+                await asyncio.sleep(1)  # do not scramble to terminate it
+            if self.process.returncode is None:
                 self.terminate()
 
         stdout = self._stream_history('stdout', 128)
@@ -224,6 +226,9 @@ class FactorioServerDaemon:
             wait_in_game.cancel()
             if not done:
                 self._process_info.daemon.cancel()
+                await asyncio.wait([self._process_info.daemon], timeout=1)
+                if not self._process_info.daemon.done():
+                    logging.warning("The game process seems not responding to SIGTERM.")
                 return {"code": EXIT_TIMEOUT, "message": f"Starting is aborted after {self.global_timeout}s."}
             if (error := self._process_info.error) is not None:
                 self._process_info.error = None
@@ -249,15 +254,25 @@ class FactorioServerDaemon:
                 # SIGINT doesn't work for Windows and CTRL_C_EVENT doesn't work for detached console subprocess
                 logging.info("stopping the server by interrupt signal")
                 self.interrupt()
-            # wait_closed = asyncio.create_task(
-            #     self._monitor['stdout'].wait_for(b'changing state from(Disconnected) to(Closed)')
-            # )
+            wait_closed = asyncio.create_task(
+                self._monitor['stdout'].wait_for(b'Goodbye')
+            )
             await asyncio.wait([self._process_info.daemon], timeout=self.global_timeout)
             # detect the result
             self._process_info.error = None
             if not self._process_info.daemon.done():
                 self._process_info.daemon.cancel()
+                wait_closed.cancel()
+                await asyncio.wait([self._process_info.daemon], timeout=1)
+                if not self._process_info.daemon.done():
+                    logging.warning("The game process seems not responding to SIGTERM.")
                 return {"code": EXIT_TIMEOUT, "message": f"Force stopping after {self.global_timeout}s."}
+            if not wait_closed.done():  # process ended but keyword not found -- exit abnormally
+                wait_closed.cancel()
+                if self._process_info.error is None or self._process_info.error["code"] == EXIT_UNEXPECT:
+                    return {"code": EXIT_UNEXPECT, "message": "Server did not stop normally."}
+                else:
+                    return self._process_info.error
             return {"code": SUCCESS, "message": None}
 
     async def restart(self, args=None) -> Status:
