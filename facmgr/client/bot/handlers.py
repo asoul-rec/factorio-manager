@@ -107,8 +107,7 @@ async def set_address(_, message: Message):
         config.config["address"] = address
         config.write()
         await message.reply(
-            REPLIES["done"]["grpc_connect"].format(address, status.welcome) + '\n' +
-            + _format_status(status)
+            REPLIES["done"]["grpc_connect"].format(address, status.welcome) + '\n' + _format_status(status)
         )
     except grpc.aio.AioRpcError as e:
         logging.error(f"{type(e).__name__}: {e.debug_error_string()}")
