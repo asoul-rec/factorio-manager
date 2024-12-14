@@ -117,7 +117,7 @@ class TestFactorioServerDaemon(TestCase):
             status = await fac.start(['--start-server', self.savefile])
             self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = asyncio.create_task(fac.stop())
-            fac.terminate()  # mimic bad thing happens during stopping
+            await fac._kill()  # mimic bad thing happens during stopping
             self.assertDictEqual(await status, {"code": EXIT_UNEXPECT, "message": "Server did not stop normally."})
 
         for ss in self.available_stop_strategies():

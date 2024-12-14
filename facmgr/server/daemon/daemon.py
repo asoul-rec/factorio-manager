@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import itertools
 # import logging
 from typing import Optional, TypedDict, Literal
-from signal import SIGTERM
 
 from .monitor import AsyncStreamMonitor
 from ...protobuf.error_code import *
@@ -88,6 +87,7 @@ class FactorioServerDaemon:
         self.message_buffer = deque(maxlen=message_maxlen)
         self.message_count = itertools.count()
         self.message_new = Event()
+        # noinspection PyTypeChecker
         self._monitor = {stream_name: AsyncStreamMonitor(history_maxlen=logs_maxlen)
                          for stream_name in ['stdout', 'stderr']}
         self._set_monitor_callback()  # it's safe to set callback of the monitor after initialization
@@ -102,25 +102,51 @@ class FactorioServerDaemon:
             self.stop_strategy = stop_strategy
 
     def _send_signal(self, sig, process=None, recursive=None):
-        if process is None:
-            process = self.process
-        if recursive is None:
-            recursive = self._is_wrapper
-        if process is not None:
-            if recursive:
-                _send_signal_recursive(process, sig)
-            else:
-                process.send_signal(sig)
+        try:
+            if process is None:
+                process = self.process
+            if recursive is None:
+                recursive = self._is_wrapper
+            if process is not None:
+                if recursive:
+                    _send_signal_recursive(process, sig)
+                else:
+                    process.send_signal(sig)
+            return process
+        except Exception as e:
+            logging.error(f"Fail to send signal {sig} to {process}. {type(e).__name__}: {e}")
 
-    def terminate(self, process=None):
-        self._send_signal(SIGTERM, process)
+    async def _kill(self, process=None, block=False):
+        if os.name == 'nt':
+            from signal import SIGTERM as SIG
+        else:
+            from signal import SIGKILL as SIG
+        process = self._send_signal(SIG, process)
+        if process is not None and block:
+            done, _ = await asyncio.wait([asyncio.create_task(process.wait())], timeout=1)
+            if not done:
+                logging.error("The process do not stop after 1s of SIGKILL/terminate()")
 
-    def interrupt(self, process=None):
+    def _interrupt(self, process=None):
         if os.name == 'nt':
             from signal import CTRL_C_EVENT as SIG
         else:
             from signal import SIGINT as SIG
         self._send_signal(SIG, process)
+
+    def _shutdown(self):
+        """exit gracefully with saving"""
+        if not self.is_running:
+            return
+        if self.stop_strategy == 'quit':
+            # /quit command works for both Windows and Linux
+            logging.info("stopping the server by /quit command")
+            self.in_game_command("/quit")
+            self.process.stdin.write_eof()
+        else:  # stop_strategy == 'interrupt'
+            # SIGINT doesn't work for Windows and CTRL_C_EVENT doesn't work for detached console subprocess
+            logging.info("stopping the server by interrupt signal")
+            self._interrupt()
 
     async def _start_factorio_subprocess(self, args: list[str]):
         kwargs = {'stdin':  asyncio.subprocess.PIPE,
@@ -136,29 +162,32 @@ class FactorioServerDaemon:
 
     async def _daemon(self, args):
         if self.is_running:
-            logging.warning("The old subprocess is still running and will get unmanaged.")
-        # starting
+            logging.error("The old subprocess is still running. Force stopping...")
+            await self._kill(block=False)
         try:
-            self.process = await self._start_factorio_subprocess(args)
-        except OSError as e:
-            self._process_info.error = {"code": BAD_ARG, "message": f"Cannot start server. {type(e).__name__}: {e}"}
-            return
-        self._process_info.error = None
-        self._monitor['stdout'].stream = self.process.stdout
-        self._monitor['stderr'].stream = self.process.stderr
-        # running
-        try:
+            # starting
+            try:
+                self.process = await self._start_factorio_subprocess(args)
+            except OSError as e:
+                self._process_info.error = {"code": BAD_ARG, "message": f"Cannot start server. {type(e).__name__}: {e}"}
+                return
+            self._process_info.error = None
+            self._monitor['stdout'].stream = self.process.stdout
+            self._monitor['stderr'].stream = self.process.stderr
+            # running
             await self.process.wait()
             await self._monitor['stdout'].wait_eof()
             await self._monitor['stderr'].wait_eof()
         except asyncio.CancelledError:
-            self.terminate()
+            self._shutdown()
+            logging.warning("The server is interrupted. Quitting...")
             raise
         finally:
-            if self.process.returncode is None:
-                await asyncio.sleep(1)  # do not scramble to terminate it
-            if self.process.returncode is None:
-                self.terminate()
+            if self.is_running:
+                await asyncio.wait([asyncio.create_task(self.process.wait())], timeout=self.global_timeout)
+                if self.is_running:
+                    logging.warning("The server have no response. Force stopping...")
+                    await self._kill(block=False)
 
         stdout = self._stream_history('stdout', 128)
         stderr = self._stream_history('stderr', 128)
@@ -196,6 +225,7 @@ class FactorioServerDaemon:
 
     async def start(self, args) -> Status:
         with self._changing_state(STARTING) as error:
+            error: Optional[Status]
             # abort in invalid states
             if error is not None:
                 return error
@@ -205,10 +235,10 @@ class FactorioServerDaemon:
                 return {"code": SATISFIED, "message": "The server is already running."}
             # prepare for starting
             logging.info(f"start Factorio server with {args=}")
-            self._process_info.changing = STARTING
             self._process_info.args = args
             self._process_info.error = None
             if self._process_info.daemon is not None:
+                # there's no running process, so we don't care about the old daemon's status
                 self._process_info.daemon.cancel()
             # start server
             self._monitor['stdout'].stream = None  # clear the old stream to monitor the keyword correctly
@@ -220,15 +250,12 @@ class FactorioServerDaemon:
                 [wait_in_game, self._process_info.daemon],
                 timeout=self.global_timeout, return_when=asyncio.FIRST_COMPLETED
             )
-            # detect the result
-            if wait_in_game in done:
+            if wait_in_game in done:  # success
                 return {"code": SUCCESS, "message": None}
+            # fail
             wait_in_game.cancel()
-            if not done:
-                self._process_info.daemon.cancel()
-                await asyncio.wait([self._process_info.daemon], timeout=1)
-                if not self._process_info.daemon.done():
-                    logging.warning("The game process seems not responding to SIGTERM.")
+            if not done:  # timeout
+                await self._kill(block=True)
                 return {"code": EXIT_TIMEOUT, "message": f"Starting is aborted after {self.global_timeout}s."}
             if (error := self._process_info.error) is not None:
                 self._process_info.error = None
@@ -238,42 +265,34 @@ class FactorioServerDaemon:
     async def stop(self) -> Status:
         with self._changing_state(STOPPING) as error:
             # abort in invalid states
+            error: Optional[Status]
             if error is not None:
                 return error
             if not self.is_running:
                 if (error := self._process_info.error) is not None:
                     return error
                 return {"code": SATISFIED, "message": "The server is already stopped."}
-            # exit gracefully with saving
-            if self.stop_strategy == 'quit':
-                # /quit command works for both Windows and Linux
-                logging.info("stopping the server by /quit command")
-                self.in_game_command("/quit")
-                self.process.stdin.write_eof()
-            else:  # stop_strategy == 'interrupt'
-                # SIGINT doesn't work for Windows and CTRL_C_EVENT doesn't work for detached console subprocess
-                logging.info("stopping the server by interrupt signal")
-                self.interrupt()
-            wait_closed = asyncio.create_task(
+            wait_goodbye = asyncio.create_task(
                 self._monitor['stdout'].wait_for(b'Goodbye')
             )
-            await asyncio.wait([self._process_info.daemon], timeout=self.global_timeout)
-            # detect the result
+            self._shutdown()
+            done_daemon, _ = await asyncio.wait([self._process_info.daemon], timeout=self.global_timeout)
+            # avoid race condition after the process ends
+            done_goodbye, _ = await asyncio.wait([wait_goodbye], timeout=0.1)
+
             self._process_info.error = None
-            if not self._process_info.daemon.done():
-                self._process_info.daemon.cancel()
-                wait_closed.cancel()
-                await asyncio.wait([self._process_info.daemon], timeout=1)
-                if not self._process_info.daemon.done():
-                    logging.warning("The game process seems not responding to SIGTERM.")
-                return {"code": EXIT_TIMEOUT, "message": f"Force stopping after {self.global_timeout}s."}
-            if not wait_closed.done():  # process ended but keyword not found -- exit abnormally
-                wait_closed.cancel()
-                if self._process_info.error is None or self._process_info.error["code"] == EXIT_UNEXPECT:
-                    return {"code": EXIT_UNEXPECT, "message": "Server did not stop normally."}
-                else:
-                    return self._process_info.error
-            return {"code": SUCCESS, "message": None}
+            try:
+                if not done_daemon:  # timeout
+                    await self._kill(block=True)
+                    return {"code": EXIT_TIMEOUT, "message": f"Force stopping after {self.global_timeout}s."}
+                if not done_goodbye:  # process ended but keyword not found -- exit abnormally
+                    if self._process_info.error is None or self._process_info.error["code"] == EXIT_UNEXPECT:
+                        return {"code": EXIT_UNEXPECT, "message": "Server did not stop normally."}
+                    else:
+                        return self._process_info.error
+                return {"code": SUCCESS, "message": None}
+            finally:  # make sure to cancel the pending keyword monitor to avoid complaints from GC
+                wait_goodbye.cancel()
 
     async def restart(self, args=None) -> Status:
         old_args = self._process_info.args
@@ -363,7 +382,7 @@ class FactorioServerDaemon:
             process = await self._start_factorio_subprocess(["--version"])
             _, pending = await asyncio.wait([asyncio.create_task(process.wait())], timeout=1)
             if pending:
-                self.terminate(process)
+                await self._kill(process, block=False)
             stdout = await process.stdout.read()
             stderr = await process.stderr.read()
         except OSError as e:
