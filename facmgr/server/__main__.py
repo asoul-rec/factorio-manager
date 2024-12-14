@@ -7,7 +7,7 @@ from . import server
 logging_level = logging.DEBUG if os.environ.get('FACTORIO_MANAGER_DEBUG', False) else logging.INFO
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging_level)
 
-parser = argparse.ArgumentParser(description="Factorio headless server manager [v240105]")
+parser = argparse.ArgumentParser(prog="facmgr.server", description="Factorio headless server manager [v241214]")
 parser.add_argument('-E', '--executable', help="Factorio binary", required=True)
 parser.add_argument('-D', '--data-dir', help="Factorio user data directory which contains 'saves', 'mods', etc.",
                     required=True)

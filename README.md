@@ -1,6 +1,13 @@
 # Factorio Manager
 
-## Architecture
+## Run
+
+```shell
+python -m facmgr.client [OPTIONS]  # run the client
+python -m facmgr.server [OPTIONS]  # run the server
+```
+
+## Project structure
 
 Factorio Manager can be separate into 2 parts
 
@@ -10,7 +17,7 @@ Factorio Manager can be separate into 2 parts
 Factorio server and Telegram bot server provide gaming and controlling functions to the end-users.
 Part 1. and 2. can be deployed on different machines or on the same machine.
 
-## Task list
+## Features
 (items with * is WIP)
 1. [ ] server manager (daemon)
    1. [x] server options
