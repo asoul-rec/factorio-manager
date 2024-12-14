@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.13"]
-        factorio-version: ["2.0.23"]
+        python-version: ["3.12", "3.13"]
+        factorio-version: ["2.0.23", "2.0.25"]
 
     steps:
       - uses: actions/checkout@v4
