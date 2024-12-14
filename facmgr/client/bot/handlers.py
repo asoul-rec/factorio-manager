@@ -17,21 +17,7 @@ from . import config
 from ..grpc_methods import ServerManagerClient, ManagerStat
 import grpc
 from .replies import REPLIES
-
-SUCCESS = 0
-
-ABORTED = 100
-SATISFIED = 101
-NOT_AVAILABLE = 102
-STARTING = 103
-STOPPING = 104
-
-BAD_ARG = 111
-
-EXIT = 120
-EXIT_UNEXPECT = 121
-EXIT_ERROR = 122
-
+from ...protobuf.error_code import *
 
 def _strip_command(s: str) -> str:
     s = s.strip()
@@ -209,6 +195,8 @@ class FactorioHandler:
                 await message.reply(REPLIES["err"]["starting"])
             elif code == STOPPING:
                 await message.reply(REPLIES["err"]["stopping"])
+            elif code == EXIT_TIMEOUT:
+                await message.reply(REPLIES["err"]["timeout"])
             else:
                 await message.reply(REPLIES["err"]["unknown_failed"])
                 await self.send_output_admin(client)
@@ -227,6 +215,8 @@ class FactorioHandler:
                 await message.reply(REPLIES["err"]["starting"])
             elif code == STOPPING:
                 await message.reply(REPLIES["err"]["stopping"])
+            elif code == EXIT_TIMEOUT:
+                await message.reply(REPLIES["err"]["timeout"])
             else:
                 status = await self.manager.get_manager_status()
                 if not status.running:  # don't care why it's stopped on client side

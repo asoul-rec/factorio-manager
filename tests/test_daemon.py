@@ -4,6 +4,7 @@ from unittest import TestCase
 
 from facmgr.server.daemon import FactorioServerDaemon
 import facmgr.server.daemon as daemon
+from facmgr.protobuf.error_code import *
 import asyncio
 
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.INFO)
@@ -26,18 +27,18 @@ class TestFactorioServerDaemon(TestCase):
             fac = FactorioServerDaemon(self.executable + "f4cT0r10")
             status = await fac.start(['--start-server', self.savefile])
             if os.name == 'nt':
-                self.assertEqual(status["code"], daemon.EXIT_ERROR)
+                self.assertEqual(status["code"], EXIT_ERROR)
                 self.assertRegex(status["message"],
                                  r"is not recognized as an internal or external command,\\r\\n"
                                  r"operable program or batch file.\\r\\n")
             else:
-                self.assertEqual(status["code"], daemon.BAD_ARG)
+                self.assertEqual(status["code"], BAD_ARG)
                 self.assertRegex(status["message"], "^Cannot start server. FileNotFoundError: ")
 
         async def finish_exe():
             fac = FactorioServerDaemon(self.executable)
             status = await fac.start(['--help'])
-            self.assertEqual(status["code"], daemon.EXIT_UNEXPECT)
+            self.assertEqual(status["code"], EXIT_UNEXPECT)
             self.assertIn("The server exited unexpectedly without error", status["message"])
             self.assertRegex(status["message"],
                              f"^The server exited unexpectedly without error, stdout='.*{factorio_help}.*', stderr=''$")
@@ -45,7 +46,7 @@ class TestFactorioServerDaemon(TestCase):
         async def wrong_fac_arg():
             fac = FactorioServerDaemon(self.executable)
             status = await fac.start(['--helphelp'])
-            self.assertEqual(status["code"], daemon.EXIT_ERROR)
+            self.assertEqual(status["code"], EXIT_ERROR)
             self.assertRegex(status["message"],
                              f"^The server finished with exit_code=1, stdout='.*{factorio_help}.*', stderr=''$")
 
@@ -53,61 +54,61 @@ class TestFactorioServerDaemon(TestCase):
             # normal and repeated start
             fac = FactorioServerDaemon(self.executable)
             status = await fac.start(['--start-server', self.savefile])
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.start(['--start-server', self.savefile])
-            self.assertDictEqual(status, {"code": daemon.SATISFIED, "message": "The server is already running."})
+            self.assertDictEqual(status, {"code": SATISFIED, "message": "The server is already running."})
 
             # fail to start if factorio is running externally already, but do not keep error after reporting it
             fac2 = FactorioServerDaemon(self.executable)
             status = await fac2.start(['--start-server', self.savefile])
-            self.assertEqual(status["code"], daemon.EXIT_ERROR)
+            self.assertEqual(status["code"], EXIT_ERROR)
             self.assertIn("exit_code=1", status["message"])
             self.assertIn("Is another instance already running?", status["message"])
             status = await fac2.stop()
-            self.assertDictEqual(status, {"code": daemon.SATISFIED, "message": "The server is already stopped."})
+            self.assertDictEqual(status, {"code": SATISFIED, "message": "The server is already stopped."})
 
             # normal and repeated stop
             status = await fac.stop()
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.stop()
-            self.assertDictEqual(status, {"code": daemon.SATISFIED, "message": "The server is already stopped."})
+            self.assertDictEqual(status, {"code": SATISFIED, "message": "The server is already stopped."})
 
             # unexpected exit is reported when trying to stop later, but not reported if trying to start
             # stop part
             status = await fac.start(['--start-server', self.savefile])
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
-            self.assertEqual(fac.in_game_command('/quit')["code"], daemon.SUCCESS)
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
+            self.assertEqual(fac.in_game_command('/quit')["code"], SUCCESS)
             fac.process.stdin.write_eof()
             await fac._monitor['stdout'].wait_for(b"Goodbye")
             await asyncio.sleep(0.1)
             status = await fac.stop()
-            self.assertEqual(status["code"], daemon.EXIT_UNEXPECT)
+            self.assertEqual(status["code"], EXIT_UNEXPECT)
             self.assertIn("The server exited unexpectedly without error", status["message"])
             # start part
             status = await fac.start(['--start-server', self.savefile])
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
-            self.assertEqual(fac.in_game_command('/quit')["code"], daemon.SUCCESS)
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
+            self.assertEqual(fac.in_game_command('/quit')["code"], SUCCESS)
             fac.process.stdin.write_eof()
             await fac._monitor['stdout'].wait_for(b"Goodbye")
             await asyncio.sleep(0.1)
             status = await fac.start(['--start-server', self.savefile])
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.stop()
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
 
             # state changing lock
             status1 = asyncio.create_task(fac2.start(['--start-server', self.savefile]))
             status2 = asyncio.create_task(fac2.start(['--start-server', self.savefile]))
             status3 = asyncio.create_task(fac2.stop())
-            self.assertDictEqual(await status1, {"code": daemon.SUCCESS, "message": None})
-            self.assertDictEqual(await status2, {"code": daemon.STARTING, "message": "The server is starting."})
-            self.assertDictEqual(await status3, {"code": daemon.STARTING, "message": "The server is starting."})
+            self.assertDictEqual(await status1, {"code": SUCCESS, "message": None})
+            self.assertDictEqual(await status2, {"code": STARTING, "message": "The server is starting."})
+            self.assertDictEqual(await status3, {"code": STARTING, "message": "The server is starting."})
             status1 = asyncio.create_task(fac2.stop())
             status2 = asyncio.create_task(fac2.stop())
             status3 = asyncio.create_task(fac2.start(['--start-server', self.savefile]))
-            self.assertDictEqual(await status1, {"code": daemon.SUCCESS, "message": None})
-            self.assertDictEqual(await status2, {"code": daemon.STOPPING, "message": "The server is stopping."})
-            self.assertDictEqual(await status3, {"code": daemon.STOPPING, "message": "The server is stopping."})
+            self.assertDictEqual(await status1, {"code": SUCCESS, "message": None})
+            self.assertDictEqual(await status2, {"code": STOPPING, "message": "The server is stopping."})
+            self.assertDictEqual(await status3, {"code": STOPPING, "message": "The server is stopping."})
 
         self.loop.run_until_complete(error_exe())
         self.loop.run_until_complete(finish_exe())
@@ -119,32 +120,32 @@ class TestFactorioServerDaemon(TestCase):
             # restart at the beginning with no arg
             fac = FactorioServerDaemon(self.executable)
             status = await fac.restart()
-            self.assertDictEqual(status, {"code":    daemon.BAD_ARG,
-                                          "message": "Must provide starting arguments at the beginning."})
+            self.assertDictEqual(
+                status, {"code": BAD_ARG, "message": "Must provide starting arguments at the beginning."})
 
             # normal test: can restart successfully no matter the server is running or not
             status = await fac.restart(['--start-server', self.savefile])
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.restart()
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.stop()
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.restart()
-            self.assertDictEqual(status, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(status, {"code": SUCCESS, "message": None})
 
             # inherit the error during starting
             fac2 = FactorioServerDaemon(self.executable)
             status = await fac2.restart(['--start-server', self.savefile])
-            self.assertEqual(status["code"], daemon.EXIT_ERROR)
+            self.assertEqual(status["code"], EXIT_ERROR)
             self.assertIn("exit_code=1", status["message"])
             self.assertIn("Is another instance already running?", status["message"])
 
             # abort restarting if an error occurs during stopping
             status1 = asyncio.create_task(fac.stop())
             status2 = asyncio.create_task(fac.restart())
-            self.assertDictEqual(await status1, {"code": daemon.SUCCESS, "message": None})
+            self.assertDictEqual(await status1, {"code": SUCCESS, "message": None})
             self.assertDictEqual(await status2, {
-                "code": daemon.STOPPING, "message": "Encountered an error while stopping: The server is stopping."
+                "code": STOPPING, "message": "Encountered an error while stopping: The server is stopping."
             })
 
         self.loop.run_until_complete(restart())
@@ -202,6 +203,7 @@ class TestFactorioServerDaemon(TestCase):
             self.assertEqual(await fac.get_game_version(), version_str)
             await fac.stop()
             self.assertEqual(await fac.get_game_version(), version_str)
+
         self.loop.run_until_complete(test())
 
     def test_get_current_args(self):

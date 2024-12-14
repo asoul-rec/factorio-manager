@@ -13,28 +13,9 @@ from typing import Optional, TypedDict, Literal
 from signal import SIGINT
 
 from .monitor import AsyncStreamMonitor
+from ...protobuf.error_code import *
 
-__all__ = [
-    'SUCCESS',
-    'ABORTED', 'SATISFIED', 'NOT_AVAILABLE', 'STARTING', 'STOPPING',
-    'BAD_ARG',
-    'EXIT', 'EXIT_UNEXPECT', 'EXIT_ERROR',
-    'Status', 'FactorioServerDaemon'
-]
-
-SUCCESS = 0
-
-ABORTED = 100
-SATISFIED = 101
-NOT_AVAILABLE = 102
-STARTING = 103
-STOPPING = 104
-
-BAD_ARG = 111
-
-EXIT = 120
-EXIT_UNEXPECT = 121
-EXIT_ERROR = 122
+__all__ = ['Status', 'FactorioServerDaemon']
 
 
 class Status(TypedDict):
@@ -194,7 +175,7 @@ class FactorioServerDaemon:
             wait_in_game.cancel()
             if not done:
                 self._process_info.daemon.cancel()
-                return {"code": EXIT_ERROR, "message": f"Starting is aborted after {self.global_timeout}s."}
+                return {"code": EXIT_TIMEOUT, "message": f"Starting is aborted after {self.global_timeout}s."}
             if (error := self._process_info.error) is not None:
                 self._process_info.error = None
                 return error
@@ -227,7 +208,7 @@ class FactorioServerDaemon:
             self._process_info.error = None
             if not self._process_info.daemon.done():
                 self._process_info.daemon.cancel()
-                return {"code": EXIT_ERROR, "message": f"Force stopping after {self.global_timeout}s."}
+                return {"code": EXIT_TIMEOUT, "message": f"Force stopping after {self.global_timeout}s."}
             return {"code": SUCCESS, "message": None}
 
     async def restart(self, args=None) -> Status:
