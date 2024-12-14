@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from unittest import TestCase
@@ -5,7 +6,6 @@ from unittest import TestCase
 from facmgr.server.daemon import FactorioServerDaemon
 import facmgr.server.daemon as daemon
 from facmgr.protobuf.error_code import *
-import asyncio
 
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.INFO)
 
@@ -19,6 +19,12 @@ class TestFactorioServerDaemon(TestCase):
         cls.savefile = os.environ['savefile']
         cls.loop = asyncio.new_event_loop()
         super().setUpClass()
+
+    @staticmethod
+    def available_stop_strategies():
+        if os.name == 'nt':
+            return ['quit']
+        return ['quit', 'interrupt']
 
     def test_error_exe(self):
         async def error_exe():
@@ -57,9 +63,9 @@ class TestFactorioServerDaemon(TestCase):
         self.loop.run_until_complete(finish_with_error())
 
     def test_start_stop(self):
-        async def start_stop():
+        async def start_stop(stop_strategy):
             # normal and repeated start
-            fac = FactorioServerDaemon(self.executable)
+            fac = FactorioServerDaemon(self.executable, stop_strategy=stop_strategy)
             status = await fac.start(['--start-server', self.savefile])
             self.assertDictEqual(status, {"code": SUCCESS, "message": None})
             status = await fac.start(['--start-server', self.savefile])
@@ -80,11 +86,12 @@ class TestFactorioServerDaemon(TestCase):
             status = await fac.stop()
             self.assertDictEqual(status, {"code": SATISFIED, "message": "The server is already stopped."})
 
-        self.loop.run_until_complete(start_stop())
+        for ss in self.available_stop_strategies():
+            self.loop.run_until_complete(start_stop(ss))
 
     def test_unexpected_exit(self):
-        async def unexpected_exit():
-            fac = FactorioServerDaemon(self.executable)
+        async def unexpected_exit(stop_strategy):
+            fac = FactorioServerDaemon(self.executable, stop_strategy=stop_strategy)
             # unexpected exit is reported when trying to stop later, but not reported if trying to start
             # stop part
             status = await fac.start(['--start-server', self.savefile])
@@ -113,7 +120,8 @@ class TestFactorioServerDaemon(TestCase):
             fac.terminate()  # mimic bad thing happens during stopping
             self.assertDictEqual(await status, {"code": EXIT_UNEXPECT, "message": "Server did not stop normally."})
 
-        self.loop.run_until_complete(unexpected_exit())
+        for ss in self.available_stop_strategies():
+            self.loop.run_until_complete(unexpected_exit(ss))
 
     def test_timeout(self):
         async def timeout():
