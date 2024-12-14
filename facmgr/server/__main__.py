@@ -13,6 +13,16 @@ parser.add_argument('-D', '--data-dir', help="Factorio user data directory which
                     required=True)
 parser.add_argument('-p', '--port', type=int, default=50051, help="grpc server port to listen on (default 50051)")
 parser.add_argument('-H', '--host', default='[::]', help="grpc server ip to listen on (default [::] for all)")
+parser.add_argument('-t', '--timeout', type=float, default=30,
+                    help="timeout in seconds for starting/stopping the server (default 30)")
+parser.add_argument('--wrapper', action='store_true',
+                    help="executable is a wrapper script rather than the Factorio binary."
+                         "Only works on Linux (default False) and is always True on Windows")
+parser.add_argument('--stop-strategy', choices=['quit', 'interrupt'], default=None,
+                    help="stop strategy for the server: quit - send '/quit' to game stdin; "
+                         "interrupt - send SIGINT to game process (default quit on Windows, interrupt on Linux)")
+
+
 cli_args = parser.parse_args()
 executable = cli_args.executable
 data_dir = cli_args.data_dir
@@ -27,5 +37,6 @@ if not os.path.isdir(fac_save):
     logging.warning(f"no 'saves' dir in the user data directory")
 
 asyncio.run(server.run(server.Config(
-    address=grpc_address, saves_dir=fac_save, fac_exec=executable
+    address=grpc_address, saves_dir=fac_save, fac_exec=executable, fac_timeout=cli_args.timeout,
+    executable_is_wrapper=cli_args.wrapper, stop_strategy=cli_args.stop_strategy
 )))

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
+from typing import Optional, Literal
 
 import grpc
 from ..protobuf.facmgr_pb2_grpc import add_ServerManagerServicer_to_server
@@ -12,12 +13,18 @@ class Config:
     address: str
     saves_dir: str
     fac_exec: str
+    fac_timeout: Optional[int]
+    executable_is_wrapper: Optional[bool]
+    stop_strategy: Optional[Literal['quit', 'interrupt']]
 
 
 # Starting the server
 async def run(config: Config):
     server = grpc.aio.server(compression=grpc.Compression.Deflate)
-    manager_servicer = ServerManager(config.saves_dir, config.fac_exec, fac_timeout=30)
+    manager_servicer = ServerManager(
+        config.saves_dir, config.fac_exec, config.fac_timeout,
+        executable_is_wrapper=config.executable_is_wrapper, stop_strategy=config.stop_strategy
+    )
     add_ServerManagerServicer_to_server(manager_servicer, server)
     listen_addr = config.address
     server.add_insecure_port(listen_addr)

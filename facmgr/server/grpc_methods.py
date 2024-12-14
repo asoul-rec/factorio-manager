@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 from ..protobuf.facmgr_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams
 from ..protobuf.facmgr_pb2_grpc import ServerManagerServicer
@@ -8,9 +9,12 @@ from . import daemon
 
 
 class ServerManager(ServerManagerServicer):
-    def __init__(self, saves_dir, fac_exec, fac_timeout, welcome_message='welcome to Factorio server'):
+    def __init__(self, saves_dir, fac_exec, fac_timeout, *,
+                 welcome_message: str = 'welcome to Factorio server', executable_is_wrapper: bool = None,
+                 stop_strategy: Literal['quit', 'interrupt'] = None):
         self.saves = SavesExplorer(saves_dir)
-        self.daemon = daemon.FactorioServerDaemon(fac_exec, timeout=fac_timeout)
+        self.daemon = daemon.FactorioServerDaemon(
+            fac_exec, timeout=fac_timeout, executable_is_wrapper=executable_is_wrapper, stop_strategy=stop_strategy)
         self.welcome = welcome_message
 
     async def GetManagerStatus(self, request, context):

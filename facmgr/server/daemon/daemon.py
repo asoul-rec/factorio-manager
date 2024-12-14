@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import itertools
 # import logging
 from typing import Optional, TypedDict, Literal
-from signal import SIGINT
+from signal import SIGTERM
 
 from .monitor import AsyncStreamMonitor
 from ...protobuf.error_code import *
@@ -32,6 +32,20 @@ def _cmd_path():
         if not os.path.isabs(_comspec):
             raise FileNotFoundError('shell not found: neither %ComSpec% nor %SystemRoot% is set')
     return _comspec
+
+
+def _send_signal_recursive(process, sig):
+    import psutil
+    parent = psutil.Process(process.pid)
+    for child in parent.children(recursive=True):
+        try:
+            child.send_signal(sig)
+        except psutil.NoSuchProcess:
+            pass
+    try:
+        parent.send_signal(sig)
+    except psutil.NoSuchProcess:
+        pass
 
 
 class FactorioServerDaemon:
@@ -56,12 +70,17 @@ class FactorioServerDaemon:
     message_count: itertools.count
     message_new: Event
 
-    def __init__(self, executable, timeout=10, logs_maxlen=None, message_maxlen=None):
+    def __init__(self, executable, timeout=30, *, logs_maxlen=None, message_maxlen=None,
+                 executable_is_wrapper=False, stop_strategy: Literal['quit', 'interrupt'] = None):
         """
         :param executable: path to the Factorio starter
         :param timeout: max waiting time for starting and (gracefully) stopping the server
         :param logs_maxlen: size of process raw output history
         :param message_maxlen: size of message buffer for TG forward long polling
+        :param executable_is_wrapper: whether the executable is a wrapper script
+        (only works on Linux and always True on Windows)
+        :param stop_strategy: stop strategy for the server:
+        quit - send '/quit' to the game stdin, interrupt - send SIGINT/CTRL_C_EVENT to the game process
         """
         self._process_info = self.Info()
         self.executable = executable
@@ -72,6 +91,36 @@ class FactorioServerDaemon:
         self._monitor = {stream_name: AsyncStreamMonitor(history_maxlen=logs_maxlen)
                          for stream_name in ['stdout', 'stderr']}
         self._set_monitor_callback()  # it's safe to set callback of the monitor after initialization
+        self._is_wrapper = True if os.name == 'nt' else executable_is_wrapper
+        if stop_strategy is None:
+            self.stop_strategy = 'quit' if os.name == 'nt' else 'interrupt'
+        else:  # some validation
+            if stop_strategy not in ['quit', 'interrupt']:
+                raise ValueError(f"Unknown stop strategy: {stop_strategy}")
+            if os.name == 'nt' and stop_strategy == 'interrupt':
+                logging.warning("The interrupt signal will cause force stopping on Windows.")
+            self.stop_strategy = stop_strategy
+
+    def _send_signal(self, sig, process=None, recursive=None):
+        if process is None:
+            process = self.process
+        if recursive is None:
+            recursive = self._is_wrapper
+        if process is not None:
+            if recursive:
+                _send_signal_recursive(process, sig)
+            else:
+                process.send_signal(sig)
+
+    def terminate(self, process=None):
+        self._send_signal(SIGTERM, process)
+
+    def interrupt(self, process=None):
+        if os.name == 'nt':
+            from signal import CTRL_C_EVENT as SIG
+        else:
+            from signal import SIGINT as SIG
+        self._send_signal(SIG, process)
 
     async def _start_factorio_subprocess(self, args: list[str]):
         kwargs = {'stdin':  asyncio.subprocess.PIPE,
@@ -103,11 +152,11 @@ class FactorioServerDaemon:
             await self._monitor['stdout'].wait_eof()
             await self._monitor['stderr'].wait_eof()
         except asyncio.CancelledError:
-            self.process.kill()  # note: kill() seems NOT working for the cmd wrapper solution
+            self.terminate()
             raise
         finally:
             if self.process.returncode is None:
-                self.process.kill()
+                self.terminate()
 
         stdout = self._stream_history('stdout', 128)
         stderr = self._stream_history('stderr', 128)
@@ -191,15 +240,15 @@ class FactorioServerDaemon:
                     return error
                 return {"code": SATISFIED, "message": "The server is already stopped."}
             # exit gracefully with saving
-            if os.name == 'nt':
-                # /quit command also work for Linux
+            if self.stop_strategy == 'quit':
+                # /quit command works for both Windows and Linux
                 logging.info("stopping the server by /quit command")
                 self.in_game_command("/quit")
                 self.process.stdin.write_eof()
-            else:
-                # SIGINT not work for Windows and I don't know how to use CTRL_C_EVENT correctly
-                logging.info("stopping the server by signal.SIGINT")
-                self.process.send_signal(SIGINT)
+            else:  # stop_strategy == 'interrupt'
+                # SIGINT doesn't work for Windows and CTRL_C_EVENT doesn't work for detached console subprocess
+                logging.info("stopping the server by interrupt signal")
+                self.interrupt()
             # wait_closed = asyncio.create_task(
             #     self._monitor['stdout'].wait_for(b'changing state from(Disconnected) to(Closed)')
             # )
@@ -299,7 +348,7 @@ class FactorioServerDaemon:
             process = await self._start_factorio_subprocess(["--version"])
             _, pending = await asyncio.wait([asyncio.create_task(process.wait())], timeout=1)
             if pending:
-                process.kill()
+                self.terminate(process)
             stdout = await process.stdout.read()
             stderr = await process.stderr.read()
         except OSError as e:
