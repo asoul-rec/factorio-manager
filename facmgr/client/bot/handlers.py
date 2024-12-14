@@ -205,6 +205,10 @@ class FactorioHandler:
             logging.warning(f"starting failed, status: {result}")
             if code == SATISFIED:
                 await message.reply(REPLIES["err"]["started"])
+            elif code == STARTING:
+                await message.reply(REPLIES["err"]["starting"])
+            elif code == STOPPING:
+                await message.reply(REPLIES["err"]["stopping"])
             else:
                 await message.reply(REPLIES["err"]["unknown_failed"])
                 await self.send_output_admin(client)
@@ -219,6 +223,10 @@ class FactorioHandler:
             logging.warning(f"stopping failed, status: {result}")
             if code == SATISFIED:
                 await message.reply(REPLIES["err"]["stopped"])
+            elif code == STARTING:
+                await message.reply(REPLIES["err"]["starting"])
+            elif code == STOPPING:
+                await message.reply(REPLIES["err"]["stopping"])
             else:
                 status = await self.manager.get_manager_status()
                 if not status.running:  # don't care why it's stopped on client side

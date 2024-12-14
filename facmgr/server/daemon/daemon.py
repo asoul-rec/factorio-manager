@@ -150,8 +150,10 @@ class FactorioServerDaemon:
         """Non-blocking lock. Available: None, Occupied: {code: old_code, message: starting/stopping}"""
         if (old_code := self._process_info.changing) is None:
             self._process_info.changing = code
-            yield
-            self._process_info.changing = None
+            try:
+                yield
+            finally:
+                self._process_info.changing = None
         else:
             yield {"code":    old_code,
                    "message": {STARTING: "The server is starting.", STOPPING: "The server is stopping."}[old_code]}
