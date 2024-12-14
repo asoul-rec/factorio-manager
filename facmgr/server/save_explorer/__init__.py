@@ -19,12 +19,17 @@ from .explorer import SavesExplorer
 #     Files changed in this commit are a parser written with Go.
 #   - Didn't read carefully, but seems can only load the levels-init.
 #
+# [factorio-file-parser] https://github.com/circlesabound/factorio-file-parser
+#   - a parser written in Rust
+#   - the author updated recently for the new 2.0 savefile format
+#
 # Other important facts discovered during testing by myself
 #   - level-init.dat have the same format with level.datx but NOT compressed. Maybe used for "restart from beginning"
 #   - If delete anything else and rename level-init.dat to level.dat, the game can start with no problem as a new game.
 #   - If delete anything else except level.dat0 and level.datmetadata, we can preview the game but cannot start it.
 #   - The game will always check the first 8 bytes (4 little-endian uint16) to get the version, even if it's insane
-#   - The savefile will definitely change in v2.0. At least, the ticks will be stored as uint64 (uint32 now)
+#   - The savefile format changes slightly in v2.0. For example, the ticks will be stored as uint64,
+#     some other integer fields are also longer, and many new fields are added.
 #   - There are 3 ticks value serialized adjacently in the savefile. Most of the time they are the same, but the middle
 #     one is different in my SE save. If they are modified externally and load & save, the 3 ticks will increase
 #     simultaneously. The time shown in the saves explorer is the 3rd tick. (the real meaning of them is unknown)
