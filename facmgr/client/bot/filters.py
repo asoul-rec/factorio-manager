@@ -11,14 +11,12 @@ def admin(_, __, m: Message):
 @filters.create
 def group_topic(_, __, m: Message):
     if (group_id := config.config.get("chat_id")) is None:
+        return False  # admin private chat only
+    if group_id != m.chat.id:
         return False
     if (topic_id := config.config.get("topic_id")) is None:
-        return m.chat.id == group_id
-    if topic_id == 1:
-        return m.reply_to_message_id is None  # todo: correctly process reply message in general
-    if m.reply_to_top_message_id:  # this mean a reply in reply or reply in topic
-        return topic_id == m.reply_to_top_message_id
-    return topic_id == m.reply_to_message_id
+        return not m.is_topic_message  # no topic id, only allow non-topic message
+    return topic_id == m.topic.id
 
 
 def not_command(prefix='/'):
