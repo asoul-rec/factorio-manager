@@ -70,7 +70,8 @@ class FactorioServerDaemon:
     message_new: Event
 
     def __init__(self, executable, timeout=30, *, logs_maxlen=None, message_maxlen=None,
-                 executable_is_wrapper=False, stop_strategy: Literal['quit', 'interrupt'] = None):
+                 executable_is_wrapper=False, stop_strategy: Literal['quit', 'interrupt'] = None,
+                 strict_version_output=True):
         """
         :param executable: path to the Factorio starter
         :param timeout: max waiting time for starting and (gracefully) stopping the server
@@ -80,6 +81,7 @@ class FactorioServerDaemon:
         (only works on Linux and always True on Windows)
         :param stop_strategy: stop strategy for the server:
         quit - send '/quit' to the game stdin, interrupt - send SIGINT/CTRL_C_EVENT to the game process
+        :param strict_version_output: report as error if the version output is not as expected
         """
         self._process_info = self.Info()
         self.executable = executable
@@ -100,6 +102,7 @@ class FactorioServerDaemon:
             if os.name == 'nt' and stop_strategy == 'interrupt':
                 logging.warning("The interrupt signal will cause force stopping on Windows.")
             self.stop_strategy = stop_strategy
+        self.strict_version_output = strict_version_output
 
     def _send_signal(self, sig, process=None, recursive=None):
         try:
@@ -390,12 +393,15 @@ class FactorioServerDaemon:
             return
 
         exit_code = process.returncode
-        if exit_code == 0 and stdout.startswith(b"Version:") and stderr == b"":
-            try:
-                return stdout.decode("ascii")
-            except UnicodeDecodeError:
-                pass
-
+        output_valid = exit_code == 0 and 0 < len(stdout) < 1000
+        if output_valid and self.strict_version_output:
+            output_valid = output_valid and stderr == b"" and stdout.isascii()
+            stdout_lines = stdout.splitlines()
+            output_valid = output_valid and len(stdout_lines) == 4
+            patterns = [rb"Version:", rb"(Binary version|Version):", rb"Map input version:", rb"Map output version:"]
+            output_valid = output_valid and all(re.match(p, l) for p, l in zip(patterns, stdout_lines))
+        if output_valid:
+            return stdout.decode(errors='replace')
         # log the error info when the version is not correctly reported
         err_info = []
         if exit_code is not None:
