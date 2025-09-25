@@ -1,5 +1,7 @@
 # Factorio Manager
 
+Factorio manager server with Telegram bot as client
+
 ## Run
 
 ```shell

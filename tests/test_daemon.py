@@ -4,7 +4,6 @@ import os
 from unittest import TestCase
 
 from facmgr.server.daemon import FactorioServerDaemon
-import facmgr.server.daemon as daemon
 from facmgr.protobuf.error_code import *
 
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.INFO)

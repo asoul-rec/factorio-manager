@@ -7,7 +7,7 @@ from pyrogram.enums import ParseMode
 from . import bot
 
 logging.basicConfig(format='%(asctime)s [%(levelname).1s] [%(name)s] %(message)s', level=logging.DEBUG)
-logging.getLogger('pyrogram').setLevel(logging.INFO)
+logging.getLogger('pyrogram').setLevel(logging.WARNING)
 
 parser = argparse.ArgumentParser(prog='facmgr.client', description="Factorio headless server manager client [v241214]")
 parser.add_argument('--bot_config', default="./bot_config.json")

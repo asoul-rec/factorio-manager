@@ -8,8 +8,8 @@ class AsyncStreamMonitor:
     stream: asyncio.StreamReader
     history: deque
     logger_callback: Optional[Callable[[bytes], None]] = None
-    _KeywordInfo = TypedDict('_KeywordInfo', {'count': int, 'found': asyncio.Event, 'result': Optional[bytes]})
-    _keywords: defaultdict[bytes, _KeywordInfo]
+    type KeywordInfo = TypedDict('KeywordInfo', {'count': int, 'found': asyncio.Event, 'result': Optional[bytes]})
+    _keywords: defaultdict[bytes, KeywordInfo]
     _task: asyncio.Task
 
     def __init__(self, initial_stream=None, *, history_maxlen=None, logger_callback=None):

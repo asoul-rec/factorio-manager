@@ -1,23 +1,25 @@
-[tool.poetry]
+[project]
 name = "factorio-manager"
-version = "0.1.0"
-description = ""
-authors = ["asoul-rec <asoulranbi@gmail.com>"]
+version = "0.1.1"
+description = "Factorio manager server with Telegram bot as client"
+license = "AGPL-3.0-only"
+authors = [
+    { name = "asoul-rec", email = "asoulranbi@gmail.com" },
+]
 readme = "README.md"
-packages = [
-    {include = "facmgr"}
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "grpcio>=1.75.0",
+    "grpcio-tools>=1.75.0",
+    "pyrofork==2.3.68",
+    "TgCrypto-pyrofork>=1.2.7"
 ]
 
-# [tool.poetry.scripts]
-# factorio-manager-server = 'server:__name__'
-
-[tool.poetry.dependencies]
-python = "^3.12"
-grpcio = "^1.68.0"
-grpcio-tools = "^1.68.0"
-pyrofork = "^2.3.68"
-TgCrypto = "^1.2.5"
+[tool.poetry]
+packages = [
+    { include = "facmgr" }
+]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
