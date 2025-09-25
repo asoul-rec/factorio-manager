@@ -15,7 +15,7 @@ packages = [
 python = "^3.12"
 grpcio = "^1.68.0"
 grpcio-tools = "^1.68.0"
-pyrofork = "^2.3.50"
+pyrofork = "^2.3.68"
 TgCrypto = "^1.2.5"
 
 [build-system]

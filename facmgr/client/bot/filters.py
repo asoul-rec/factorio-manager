@@ -9,14 +9,18 @@ def admin(_, __, m: Message):
 
 
 @filters.create
-def group_topic(_, __, m: Message):
+async def group_topic(_, __, m: Message):
+    # REMOVE THIS after pyrofork fixed this bug
+    if getattr(m, "topic", None) is None:
+        m.topic = None
     if (group_id := config.config.get("chat_id")) is None:
         return False  # admin private chat only
     if group_id != m.chat.id:
         return False
-    if (topic_id := config.config.get("topic_id")) is None:
-        return not m.is_topic_message  # no topic id, only allow non-topic message
-    return topic_id == m.topic.id
+    if (topic_id := config.config.get("topic_id")) is not None:
+        return await filters.topic(topic_id)(None, m)
+    else:
+        return not m.is_topic_message  # only allow non-topic message if no topic id
 
 
 def not_command(prefix='/'):

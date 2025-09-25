@@ -67,14 +67,17 @@ async def set_chat_id(client: Client, message: Message):
     config.config['chat_id'] = chat_id
     chat = await client.get_chat(chat_id)
     if info['mid2']:
-        from . import topic_patch  # noqa, a monkey-patch to 'get_messages'
         topic_id = int(info['mid1'])
-        topic_message = await client.get_messages(chat_id, int(info['mid1']))
-        if topic_create := getattr(topic_message, 'topic', None):
-            topic_title = topic_create.title
-        else:
+        if topic_id == 1:
             topic_title = "General"
-            topic_id = 1
+        else:
+            topic_message = await client.get_messages(chat_id, topic_id)
+            if topic_create := topic_message.forum_topic_created:
+                topic_title = topic_create.title
+            else:
+                logging.info(f"topic_id extracted from {text} is not a forum_topic_created message")
+                await message.reply(REPLIES["err"]["not_channel"])
+                return
         config.config['topic_id'] = topic_id
         await message.reply(REPLIES["done"]["chat_topic"].format(chat.title, topic_title))
     else:
