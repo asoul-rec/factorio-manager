@@ -19,6 +19,7 @@ import grpc
 from .replies import REPLIES
 from ...protobuf.error_code import *
 
+
 def _strip_command(s: str) -> str:
     s = s.strip()
     if s.startswith('/'):
@@ -155,8 +156,8 @@ class FactorioHandler:
             self._push_info = None
         else:
             self._push_info = new_info.copy()
-        if self._push_info and (self._push_task is None or self._push_task.done()):
-            self._push_task = asyncio.create_task(self.push_update(**self._push_info))
+        # consider always restarting the push task rather than just checking it?
+        self.ensure_push_task()
         # self._push_wakeup.set()
 
     @staticmethod
@@ -169,9 +170,7 @@ class FactorioHandler:
                 else:
                     await message.reply(REPLIES["err"]["no_manager"])
                     return
-            # passively activate the push task
-            if self._push_info and (self._push_task is None or self._push_task.done()):
-                self._push_task = asyncio.create_task(self.push_update(**self._push_info))
+            self.ensure_push_task()
             try:
                 await func(self, client, message)
             except grpc.aio.AioRpcError as e:
@@ -179,6 +178,14 @@ class FactorioHandler:
                 await message.reply(REPLIES["err"]["bad_manager"].format(self.manager.address))
 
         return wrapper
+
+    def ensure_push_task(self):
+        if self._push_info and (self._push_task is None or self._push_task.done()):
+            logging.info("starting new push task")
+            if self._push_task and (err := self._push_task.exception()):
+                logging.debug(f"old push task exited with error {type(err).__name__}: "
+                              f"{err.debug_error_string() if isinstance(err, grpc.aio.AioRpcError) else err}")
+            self._push_task = asyncio.create_task(self.push_update(**self._push_info))
 
     @check_manager
     async def start_server(self, client: Client, message: Message):
