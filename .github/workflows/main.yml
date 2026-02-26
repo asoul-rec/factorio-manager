@@ -19,12 +19,28 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Restore Factorio cache
+        id: cache-factorio-restore
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/factorio
+          key: factorio-${{ matrix.factorio-version }}
       - name: Set up environment
         run: |
-          wget https://www.factorio.com/get-download/${{ matrix.factorio-version }}/headless/linux64 -O ~/factorio.tar.xz
-          tar -xf ~/factorio.tar.xz -C ~
-          ~/factorio/bin/x64/factorio --create ~/factorio/saves/test.zip
-          pip install grpcio==1.68.0 grpcio-tools==1.68.0
+          if [ ! -d ~/factorio ]; then
+            wget https://www.factorio.com/get-download/${{ matrix.factorio-version }}/headless/linux64 -O ~/factorio.tar.xz
+            tar -xf ~/factorio.tar.xz -C ~
+            ~/factorio/bin/x64/factorio --create ~/factorio/saves/test.zip
+          fi
+          python -m pip install --upgrade pip
+          pip install .
+      - name: Save Factorio cache
+        id: cache-factorio-save
+        if: steps.cache-factorio-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ~/factorio
+          key: factorio-${{ matrix.factorio-version }}
       - name: Run unittest
         run: |
           export executable=$(realpath -s ~/factorio/bin/x64/factorio)
