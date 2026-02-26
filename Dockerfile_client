@@ -1,9 +1,7 @@
 # stage 1: python and packages
-FROM python:3.13-alpine AS pyenv
+FROM python:3.13-slim AS pyenv
 
-ARG POETRY_HOME=/opt/poetry EXPORT_PREFIX=/root/export_rootfs
-
-RUN apk add build-base linux-headers
+ARG POETRY_HOME=/opt/poetry
 
 RUN python3 -m venv $POETRY_HOME \
     && $POETRY_HOME/bin/pip install poetry==2.2
@@ -15,16 +13,13 @@ RUN cd /root/server \
     && $POETRY_HOME/bin/poetry build \
     && $POETRY_HOME/bin/poetry run python -m pip install dist/*.whl psutil
 
-RUN mkdir $EXPORT_PREFIX/usr/lib/aarch64-linux-gnu/ -p \
-    && cp -a /usr/lib/libsqlite* $EXPORT_PREFIX/usr/lib/ \
-    && cp -a /usr/local/ $EXPORT_PREFIX/usr/ \
-    && rm -rf $EXPORT_PREFIX/usr/local/lib/python3.13/site-packages/ \
-    && cp -a /root/.cache/pypoetry/virtualenvs/*/lib/python3.13/site-packages/ $EXPORT_PREFIX/usr/local/lib/python3.13/site-packages/
+RUN cp -a /root/.cache/pypoetry/virtualenvs/*/lib/python3.13/site-packages/ /root/site-packages
 
 
 # stage 2: main image
-FROM python:3.13-alpine
+FROM gcr.io/distroless/python3-debian13:nonroot
 
-COPY --from=pyenv /root/export_rootfs/ /
+COPY --from=pyenv /root/site-packages /home/nonroot/.local/lib/python3.13/site-packages
 
-ENTRYPOINT ["/usr/local/bin/python3", "-m", "facmgr.client"]
+ENTRYPOINT ["/usr/bin/python3", "-m", "facmgr.client"]
+

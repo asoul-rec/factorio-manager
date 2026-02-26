@@ -1,14 +1,12 @@
-ARG FAC_VER=stable
+ARG FAC_VER=stable-rootless
 
 # stage 1: python and packages
-FROM python:3.13-slim-bookworm AS pyenv
+FROM python:3.13-slim-trixie AS pyenv
 
 ARG POETRY_HOME=/opt/poetry EXPORT_PREFIX=/root/export_rootfs
 
-RUN apt-get -q update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qy install build-essential \
-    && python3 -m venv $POETRY_HOME \
-    && $POETRY_HOME/bin/pip install poetry==1.8.4
+RUN python3 -m venv $POETRY_HOME \
+    && $POETRY_HOME/bin/pip install poetry==2.2
 
 COPY . /root/server/
 
