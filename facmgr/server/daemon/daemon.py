@@ -35,16 +35,18 @@ def _cmd_path():
 
 def _send_signal_recursive(process, sig):
     import psutil
-    parent = psutil.Process(process.pid)
-    for child in parent.children(recursive=True):
-        try:
-            child.send_signal(sig)
-        except psutil.NoSuchProcess:
-            pass
     try:
-        parent.send_signal(sig)
-    except psutil.NoSuchProcess:
-        pass
+        parent = psutil.Process(process.pid)
+        procs = parent.children(recursive=True)
+        procs.append(parent)
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return
+
+    for p in procs:
+        try:
+            p.send_signal(sig)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
 
 
 class FactorioServerDaemon:
@@ -65,6 +67,7 @@ class FactorioServerDaemon:
     process: Optional[asyncio.subprocess.Process] = None
     _process_info: Info
     _monitor: dict[Literal['stdout', 'stderr'], AsyncStreamMonitor]
+    _background_tasks: set[asyncio.Task]
     message_buffer: deque[tuple[int, bytes]]
     message_count: itertools.count
     message_new: Event
@@ -86,6 +89,7 @@ class FactorioServerDaemon:
         self._process_info = self.Info()
         self.executable = executable
         self.global_timeout = timeout
+        self._background_tasks = set()
         self.message_buffer = deque(maxlen=message_maxlen)
         self.message_count = itertools.count()
         self.message_new = Event()
@@ -119,16 +123,23 @@ class FactorioServerDaemon:
         except Exception as e:
             logging.error(f"Fail to send signal {sig} to {process}. {type(e).__name__}: {e}")
 
-    async def _kill(self, process=None, block=False):
+    async def _kill(self, process: Optional[asyncio.subprocess.Process] = None,
+                    block: bool = False) -> Optional[asyncio.subprocess.Process]:
         if os.name == 'nt':
             from signal import SIGTERM as SIG
         else:
             from signal import SIGKILL as SIG
         process = self._send_signal(SIG, process)
-        if process is not None and block:
-            done, _ = await asyncio.wait([asyncio.create_task(process.wait())], timeout=1)
-            if not done:
-                logging.error("The process do not stop after 1s of SIGKILL/terminate()")
+        if process is not None:
+            # Ensure the process is reaped eventually
+            task = asyncio.create_task(process.wait())
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
+            if block:
+                done, _ = await asyncio.wait([task], timeout=1)
+                if not done:
+                    logging.error("The process do not stop after 1s of SIGKILL/terminate()")
+        return process
 
     def _interrupt(self, process=None):
         if os.name == 'nt':
@@ -187,10 +198,11 @@ class FactorioServerDaemon:
             raise
         finally:
             if self.is_running:
-                await asyncio.wait([asyncio.create_task(self.process.wait())], timeout=self.global_timeout)
-                if self.is_running:
-                    logging.warning("The server have no response. Force stopping...")
-                    await self._kill(block=False)
+                try:
+                    await asyncio.wait_for(self.process.wait(), timeout=self.global_timeout)
+                except asyncio.TimeoutError:
+                    logging.warning(f"The server have no response after {self.global_timeout:.1f}s. Force stopping...")
+                    await self._kill(block=True)
 
         stdout = self._stream_history('stdout', 128)
         stderr = self._stream_history('stderr', 128)
@@ -383,9 +395,10 @@ class FactorioServerDaemon:
     async def get_game_version(self) -> Optional[str]:
         try:
             process = await self._start_factorio_subprocess(["--version"])
-            _, pending = await asyncio.wait([asyncio.create_task(process.wait())], timeout=1)
-            if pending:
-                await self._kill(process, block=False)
+            try:
+                await asyncio.wait_for(process.wait(), timeout=10)
+            except asyncio.TimeoutError:
+                await self._kill(process, block=True)
             stdout = await process.stdout.read()
             stderr = await process.stderr.read()
         except OSError as e:
@@ -415,3 +428,4 @@ class FactorioServerDaemon:
     def get_current_args(self) -> Optional[list[str]]:
         if self.process is not None:
             return self._process_info.args
+
