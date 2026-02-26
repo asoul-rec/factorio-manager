@@ -1,8 +1,8 @@
 {
   "zh_cn": {
     "set": {
-      "chat": "请设置机器人的工作位置。使用群聊中的消息链接（如 https://t.me/c/1234/567 ）作为参数使机器人在群里工作，或者'no'仅在该私聊中使用",
-      "address": "请设置执行端gRPC服务器地址"
+      "chat": "请设置机器人的工作位置。使用群聊中的消息链接（如 https://t.me/c/1234/567 ）作为参数使机器人在群里工作，或者 `no` 仅在该私聊中使用",
+      "address": "请设置执行端 gRPC 服务器地址"
     },
     "done": {
       "first": "欢迎使用，启动之前您还需要完成一些必要的配置项目",
@@ -17,19 +17,20 @@
       "command": "命令已发送",
       "running": "服务器正在运行",
       "not_running": "服务器未运行",
-      "fac_version": "Factorial 版本信息如下：\n{}",
+      "fac_version": "Factorio 版本信息如下：\n{}",
+      "fac_status_checking": "正在获取 Factorio 详细信息...",
       "current_save": "当前载入的存档文件为 {}",
-      "grpc_connect": "已连接到位于 {} 的gRPC服务器：{}",
-      "extra_args": "Factorial的启动参数从\n{}\n更改为\n{}",
+      "grpc_connect": "已连接到位于 {} 的 gRPC 服务器：{}",
+      "extra_args": "Factorio 的启动参数从\n{}\n更改为\n{}",
       "all_conf": "机器人配置数据如下：\n{}",
       "savelist": "服务器有以下存档（时间为游戏内时间）：\n{}",
       "upload_prep": "准备上传存档 {}",
       "uploading": "正在上传存档 {name}，大小 {total_mb:.1f}MB，进度 {percent:.1f}%"
     },
     "err": {
-      "no_manager": "未设置执行端gRPC服务器",
-      "bad_manager": "位于 {} 的gRPC服务器异常或无法连接， 具体信息已记录到日志",
-      "id_invalid": "无法获取群聊信息，请首先将bot加入群组",
+      "no_manager": "未设置执行端 gRPC 服务器",
+      "bad_manager": "位于 {} 的 gRPC 服务器异常或无法连接， 具体信息已记录到日志",
+      "id_invalid": "无法获取群聊信息，请首先将 bot 加入群组",
       "not_channel": "不是有效的群聊",
       "no_style": "{} 不是有效的对话风格",
       "no_savename": "请在参数中指定存档名称",
@@ -39,6 +40,7 @@
       "stopping": "服务器正在停止，请稍后再试",
       "timeout": "操作超时，服务器已强制停止",
       "file_not_found": "未找到指定的存档",
+      "fac_status_unknown": "Factorio 信息获取失败",
       "unknown_failed": "执行失败，具体原因已记录到日志"
     },
     "game": {
@@ -49,15 +51,15 @@
   },
   "kawaii": {
     "set": {
-      "chat": "想和咱在哪里聊天？把咱拉到群里然后随便选一条群里的消息链接（如 https://t.me/c/1234/567 ）发给咱，或者写'no'只和咱私聊",
-      "address": "告诉我和咱贴贴的gRPC服务器地址"
+      "chat": "想和咱在哪里聊天？把咱拉到群里然后随便选一条群里的消息链接（如 https://t.me/c/1234/567 ）发给咱，或者写 `no` 只和咱私聊",
+      "address": "告诉我和咱贴贴的 gRPC 服务器地址"
     },
     "done": {
-      "first": "欢迎使用喵~",
+      "first": "欢迎使用喵~ 在启动之前您还需要完成一些必要的配置项目喵",
       "welcome": "喵~咱已经准备好了喵~",
       "private": "咱保证以后就只跟你私聊哦",
       "chat": "咱以后就在 {} 这个群里说话了喵",
-      "chat_topic": "咱以后就在 {} 这个群里的 {} 分频说话了喵",
+      "chat_topic": "咱以后就在 {} 这个群里的 {} 话题说话了喵",
       "style": "咱以后就用 {} 这种方式说话了喵",
       "start": "咱开始干活了，夸夸咱捏~",
       "stop": "诶，要让咱休息了吗？晚安捏~",
@@ -65,23 +67,30 @@
       "command": "收到主人的指令了！",
       "running": "咱今天也很有活力的说",
       "not_running": "咱今天不想干活的说",
-      "grpc_connect": "咱和 {} 的gRPC服务器贴贴了！她告诉我 {}",
-      "extra_args": "咱把Factorial的启动参数从\n{}\n改成\n{}\n了喵",
+      "fac_version": "咱帮你看了下 Factorio 的版本喵：\n{}",
+      "fac_status_checking": "咱还在看 Factorio 是什么版本捏...",
+      "current_save": "咱现在在玩的存档是 {} 喵",
+      "grpc_connect": "咱和 {} 的 gRPC 服务器贴贴了！她告诉我 {}",
+      "extra_args": "咱把 Factorio 的启动参数从\n{}\n改成\n{}\n了喵",
       "all_conf": "咱的配置数据如下：\n{}",
       "savelist": "咱把你之前陪咱玩的内容和时长都记在小本本上了：\n{}",
       "upload_prep": "咱想把 {} 发给你",
       "uploading": "咱把 {name} 发给你了，一共有 {total_mb:.1f}MB，已经发了 {percent:.1f}%"
     },
     "err": {
-      "no_manager": "咱小声问一句，应该让哪个gRPC服务器干活哇",
-      "bad_manager": "诶，咱找不到 {} 的gRPC服务器了，给你看看咱今天的日记（害羞x",
-      "id_invalid": "诶...为啥咱找不到群聊了",
+      "no_manager": "咱小声问一句，应该让哪个 gRPC 服务器干活哇",
+      "bad_manager": "诶，咱找不到 {} 的 gRPC 服务器了，给你看看咱今天的日记（害羞x",
+      "id_invalid": "诶...为啥咱找不到群聊了，快把咱拉进群里喵",
       "not_channel": "只准给咱发正经群，不然...不然咱就咬你哦",
       "no_style": "咱不会用 {} 这种方式说话喵",
       "no_savename": "唔（挠头）...你想让咱干啥？",
       "started": "咱就在好好干着呢，你是想让我休息还是干点别的嘛",
       "stopped": "咱就在睡觉呢，rua~",
+      "starting": "咱还在起床呢，等一下下嘛~",
+      "stopping": "咱在收拾东西准备睡觉啦，等一下下喵~",
+      "timeout": "呜...咱等太久了，只能先让它停下来了喵",
       "file_not_found": "诶，咱找不到你说的存档呢",
+      "fac_status_unknown": "咱不知道 Factorio 是什么版本喵",
       "unknown_failed": "诶，咱不知道怎么又搞砸了，给你看看咱今天的日记（害羞x"
     },
     "game": {
