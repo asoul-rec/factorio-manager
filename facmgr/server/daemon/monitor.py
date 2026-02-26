@@ -47,7 +47,7 @@ class AsyncStreamMonitor:
     async def wait_for(self, keyword: bytes):
         """
         Wait until the keyword found in stream.
-            1. Re-entrant in asyncio level: can handle multiple (even the same) keyword;
+            1. Coroutine-safe: can handle multiple concurrent tasks waiting for the same keyword;
             2. It will never finish if the stream is finished or changed, so use asyncio.wait_for for timeout if needed;
             3. It can wait for the keyword even if the stream is not available yet
 
@@ -56,10 +56,12 @@ class AsyncStreamMonitor:
         """
         kw_info = self._keywords[keyword]
         kw_info['count'] += 1
-        await kw_info['found'].wait()
-        kw_info['count'] -= 1
-        if not kw_info['count']:
-            del self._keywords[keyword]
+        try:
+            await kw_info['found'].wait()
+        finally:
+            kw_info['count'] -= 1
+            if not kw_info['count']:
+                del self._keywords[keyword]
         return kw_info['result']
 
     async def wait_eof(self):
