@@ -15,8 +15,12 @@ RUN cd /root/server \
     && $POETRY_HOME/bin/poetry build \
     && $POETRY_HOME/bin/poetry run python -m pip install dist/*.whl psutil
 
-RUN mkdir $EXPORT_PREFIX/usr/lib/aarch64-linux-gnu/ -p \
-    && cp -a /usr/lib/aarch64-linux-gnu/libsqlite* $EXPORT_PREFIX/usr/lib/aarch64-linux-gnu/ \
+RUN UNAME_M=$(uname -m) \
+    && if [ "$UNAME_M" = "x86_64" ]; then ARCH_DIR="x86_64-linux-gnu"; \
+    elif [ "$UNAME_M" = "aarch64" ]; then ARCH_DIR="aarch64-linux-gnu"; \
+    else echo "Unsupported architecture: $UNAME_M" && exit 1; fi \
+    && mkdir -p $EXPORT_PREFIX/usr/lib/$ARCH_DIR/ \
+    && cp -a /usr/lib/$ARCH_DIR/libsqlite* $EXPORT_PREFIX/usr/lib/$ARCH_DIR/ \
     && cp -a /usr/local/ $EXPORT_PREFIX/usr/ \
     && rm -rf $EXPORT_PREFIX/usr/local/lib/python3.13/site-packages/ \
     && cp -a /root/.cache/pypoetry/virtualenvs/*/lib/python3.13/site-packages/ $EXPORT_PREFIX/usr/local/lib/python3.13/site-packages/
