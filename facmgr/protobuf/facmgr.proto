@@ -13,6 +13,7 @@ service ServerManager {
   rpc WaitForUpdates (UpdateInquiry) returns (GameUpdates);
   rpc GetOutputStreams (google.protobuf.Empty) returns (OutputStreams);
   rpc UploadToTelegram (UploadTelegramInfo) returns (stream Status);
+  rpc UpdateHeadless (HeadlessUpdateRequest) returns (stream HeadlessUpdateEvent);
 }
 
 message Ping {
@@ -78,4 +79,17 @@ message TelegramClient {
 message UploadTelegramInfo {
   SaveName save_name = 1;
   TelegramClient client = 2;
+}
+
+message HeadlessUpdateRequest {
+  optional string channel = 1;
+  optional string version = 2;
+}
+
+message HeadlessUpdateEvent {
+  string stage = 1;
+  int32 code = 2;
+  string message = 3;
+  optional double progress = 4;
+  optional string version = 5;
 }

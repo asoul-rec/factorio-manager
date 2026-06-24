@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Restore Factorio cache
@@ -48,6 +48,7 @@ jobs:
           export executable=$(realpath -s ~/factorio/bin/x64/factorio)
           export savefile=$(realpath -s ~/factorio/saves/test.zip)
           python -m unittest tests.test_daemon
+          python -m unittest tests.test_updater
       - name: Check protobuf consistency
         run: |
           cp -a facmgr/protobuf ./protobuf_bak

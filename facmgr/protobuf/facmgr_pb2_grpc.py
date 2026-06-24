@@ -6,7 +6,7 @@ import warnings
 from facmgr.protobuf import facmgr_pb2 as facmgr_dot_protobuf_dot_facmgr__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
-GRPC_GENERATED_VERSION = '1.78.0'
+GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -85,6 +85,11 @@ class ServerManagerStub(object):
                 request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.UploadTelegramInfo.SerializeToString,
                 response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
                 _registered_method=True)
+        self.UpdateHeadless = channel.unary_stream(
+                '/factorio_server.ServerManager/UpdateHeadless',
+                request_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.HeadlessUpdateRequest.SerializeToString,
+                response_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.HeadlessUpdateEvent.FromString,
+                _registered_method=True)
 
 
 class ServerManagerServicer(object):
@@ -150,6 +155,12 @@ class ServerManagerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UpdateHeadless(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ServerManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -202,6 +213,11 @@ def add_ServerManagerServicer_to_server(servicer, server):
                     servicer.UploadToTelegram,
                     request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.UploadTelegramInfo.FromString,
                     response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.Status.SerializeToString,
+            ),
+            'UpdateHeadless': grpc.unary_stream_rpc_method_handler(
+                    servicer.UpdateHeadless,
+                    request_deserializer=facmgr_dot_protobuf_dot_facmgr__pb2.HeadlessUpdateRequest.FromString,
+                    response_serializer=facmgr_dot_protobuf_dot_facmgr__pb2.HeadlessUpdateEvent.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -474,6 +490,33 @@ class ServerManager(object):
             '/factorio_server.ServerManager/UploadToTelegram',
             facmgr_dot_protobuf_dot_facmgr__pb2.UploadTelegramInfo.SerializeToString,
             facmgr_dot_protobuf_dot_facmgr__pb2.Status.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateHeadless(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/factorio_server.ServerManager/UpdateHeadless',
+            facmgr_dot_protobuf_dot_facmgr__pb2.HeadlessUpdateRequest.SerializeToString,
+            facmgr_dot_protobuf_dot_facmgr__pb2.HeadlessUpdateEvent.FromString,
             options,
             channel_credentials,
             insecure,

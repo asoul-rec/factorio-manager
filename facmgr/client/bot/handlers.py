@@ -37,6 +37,16 @@ def _format_status(status: ManagerStat):
     return '\n'.join(replies)
 
 
+def _parse_update_args(text: str) -> tuple[Optional[str], Optional[str]]:
+    arg = _strip_command(text)
+    if not arg:
+        return None, None
+    arg = arg.strip()
+    if arg in ("stable", "experimental"):
+        return arg, None
+    return None, arg
+
+
 async def set_chat_id(client: Client, message: Message):
     text = _strip_command(message.text)
 
@@ -369,6 +379,43 @@ class FactorioHandler:
                 return
         edit_task.cancel()
         await out_message.delete()
+
+    @check_manager
+    async def update_headless(self, _, message: Message):
+        channel, version = _parse_update_args(message.text)
+        out_message = await message.reply(REPLIES["done"]["update_prep"])
+        last_progress = -1.0
+        last_stage = None
+
+        async for event in self.manager.update_headless(channel=channel, version=version):
+            code = event["code"]
+            stage = event["stage"]
+            progress = event["progress"]
+            should_edit = stage != last_stage
+            if progress is not None and progress - last_progress >= 0.05:
+                should_edit = True
+                last_progress = progress
+            if not should_edit and not code:
+                continue
+
+            last_stage = stage
+            if code:
+                if code == SATISFIED:
+                    await out_message.edit_text(REPLIES["done"]["update_satisfied"].format(event["message"]))
+                elif code == NOT_AVAILABLE:
+                    await out_message.edit_text(REPLIES["err"]["update_unavailable"].format(event["message"]))
+                else:
+                    await out_message.edit_text(REPLIES["err"]["update_failed"].format(event["message"]))
+                return
+
+            if stage == "complete":
+                await out_message.edit_text(REPLIES["done"]["update_complete"].format(event["version"]))
+            elif progress is not None:
+                await out_message.edit_text(REPLIES["done"]["updating_progress"].format(
+                    message=event["message"], percent=progress * 100
+                ))
+            else:
+                await out_message.edit_text(REPLIES["done"]["updating"].format(event["message"]))
 
     # async def _push_watchdog(self):
     #     while True:

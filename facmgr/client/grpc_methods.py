@@ -6,7 +6,8 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from ..protobuf.facmgr_pb2 import (
     Ping, SaveName, SaveNameList, ServerOptions, SaveStat as SaveStatPB2, Status as StatusPB2,
-    Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams, UploadTelegramInfo, TelegramClient
+    Command, UpdateInquiry, GameUpdates, ManagerStat, OutputStreams, UploadTelegramInfo, TelegramClient,
+    HeadlessUpdateRequest, HeadlessUpdateEvent
 )
 from ..protobuf.facmgr_pb2_grpc import ServerManagerStub
 
@@ -25,6 +26,14 @@ class SaveStat(TypedDict):
 class Status(TypedDict):
     code: int
     message: Optional[str]
+
+
+class HeadlessUpdateStatus(TypedDict):
+    stage: str
+    code: int
+    message: str
+    progress: Optional[float]
+    version: Optional[str]
 
 
 class ServerManagerClient:
@@ -96,3 +105,20 @@ class ServerManagerClient:
             ))
             async for status in status_stream:
                 yield {"code": status.code, "message": status.message}
+
+    async def update_headless(self, channel: str = None, version: str = None) -> AsyncIterator[HeadlessUpdateStatus]:
+        async with self._channel_stub() as stub:
+            request = HeadlessUpdateRequest()
+            if channel is not None:
+                request.channel = channel
+            if version is not None:
+                request.version = version
+            event_stream: AsyncIterator[HeadlessUpdateEvent] = stub.UpdateHeadless(request)
+            async for event in event_stream:
+                yield {
+                    "stage": event.stage,
+                    "code": event.code,
+                    "message": event.message,
+                    "progress": event.progress if event.HasField("progress") else None,
+                    "version": event.version if event.HasField("version") else None,
+                }

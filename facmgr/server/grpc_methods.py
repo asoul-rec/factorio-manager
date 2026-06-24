@@ -1,18 +1,27 @@
 import logging
-from typing import Literal
+import asyncio
 
-from ..protobuf.facmgr_pb2 import SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams
+from ..protobuf.facmgr_pb2 import (
+    SaveNameList, SaveName, SaveStat, Status, GameUpdates, ManagerStat, OutputStreams, HeadlessUpdateEvent
+)
 from ..protobuf.facmgr_pb2_grpc import ServerManagerServicer
+from ..protobuf.error_code import STARTING
 
 from .save_explorer import SavesExplorer
 from . import daemon
+from .updater import FactorioHeadlessUpdater
 
 
 class ServerManager(ServerManagerServicer):
     def __init__(self, saves_dir, fac_exec, fac_timeout, *,
+                 update_dir: str = None,
                  welcome_message: str = 'welcome to Factorio server', **kwargs):
         self.saves = SavesExplorer(saves_dir)
         self.daemon = daemon.FactorioServerDaemon(fac_exec, timeout=fac_timeout, **kwargs)
+        self.updater = FactorioHeadlessUpdater(
+            update_dir, timeout=fac_timeout, strict_version_output=kwargs.get("strict_version_output", True)
+        )
+        self._update_lock = asyncio.Lock()
         self.welcome = welcome_message
 
     async def GetManagerStatus(self, request, context):
@@ -95,3 +104,18 @@ class ServerManager(ServerManagerServicer):
         except Exception as e:
             logging.error(f"An error occurs during uploading: '{type(e).__name__}: {e}'")
             yield Status(code=-2, message=f"{type(e).__name__}: {e}")
+
+    async def UpdateHeadless(self, request, context):
+        if self._update_lock.locked():
+            yield HeadlessUpdateEvent(stage="busy", code=STARTING, message="A headless update is already running.")
+            return
+        async with self._update_lock:
+            channel = request.channel if request.HasField("channel") else None
+            version = request.version if request.HasField("version") else None
+            async for event in self.updater.update(self.daemon, channel=channel, version=version):
+                result = HeadlessUpdateEvent(stage=event.stage, code=event.code, message=event.message or "")
+                if event.progress is not None:
+                    result.progress = event.progress
+                if event.version is not None:
+                    result.version = event.version
+                yield result

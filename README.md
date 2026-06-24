@@ -9,6 +9,18 @@ python -m facmgr.client [OPTIONS]  # run the client
 python -m facmgr.server [OPTIONS]  # run the server
 ```
 
+To enable `/update`, start the server with a writable release directory:
+
+```shell
+python -m facmgr.server -E /path/to/factorio-managed-releases/current/bin/x64/factorio \
+  -D /path/to/factorio-data \
+  --update-dir /path/to/factorio-managed-releases
+```
+
+The updater stores releases under `update-dir/releases` and atomically switches
+`update-dir/current/bin/x64/factorio`. Package-managed deployments such as Nix
+store paths should keep updating Factorio through the package manager instead.
+
 ## Project structure
 
 Factorio Manager can be separate into 2 parts

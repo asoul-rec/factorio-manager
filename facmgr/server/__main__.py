@@ -23,6 +23,9 @@ parser.add_argument('--stop-strategy', choices=['quit', 'interrupt'], default=No
 parser.add_argument('--disable-version-output-check', action='store_false', dest='strict_version_output',
                     help="disable sanity check for the --version output of the Factorio executable. This is unfavored "
                          "since the output may contain undesired or sensitive information.")
+parser.add_argument('--update-dir', default=None,
+                    help="writable directory used to manage Factorio headless releases. "
+                         "When set, /update switches update-dir/current/bin/x64/factorio atomically.")
 
 cli_args = parser.parse_args()
 logging_level = {0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG}.get(cli_args.verbose, logging.DEBUG)
@@ -42,6 +45,7 @@ if not os.path.isdir(fac_save):
 
 asyncio.run(server.run(server.Config(
     address=grpc_address, saves_dir=fac_save, fac_exec=executable, fac_timeout=cli_args.timeout,
+    update_dir=cli_args.update_dir,
     executable_is_wrapper=cli_args.wrapper, stop_strategy=cli_args.stop_strategy,
     strict_version_output=cli_args.strict_version_output
 )))

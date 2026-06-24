@@ -104,3 +104,25 @@ class UploadTelegramInfo(_message.Message):
     save_name: SaveName
     client: TelegramClient
     def __init__(self, save_name: _Optional[_Union[SaveName, _Mapping]] = ..., client: _Optional[_Union[TelegramClient, _Mapping]] = ...) -> None: ...
+
+class HeadlessUpdateRequest(_message.Message):
+    __slots__ = ("channel", "version")
+    CHANNEL_FIELD_NUMBER: _ClassVar[int]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
+    channel: str
+    version: str
+    def __init__(self, channel: _Optional[str] = ..., version: _Optional[str] = ...) -> None: ...
+
+class HeadlessUpdateEvent(_message.Message):
+    __slots__ = ("stage", "code", "message", "progress", "version")
+    STAGE_FIELD_NUMBER: _ClassVar[int]
+    CODE_FIELD_NUMBER: _ClassVar[int]
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    PROGRESS_FIELD_NUMBER: _ClassVar[int]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
+    stage: str
+    code: int
+    message: str
+    progress: float
+    version: str
+    def __init__(self, stage: _Optional[str] = ..., code: _Optional[int] = ..., message: _Optional[str] = ..., progress: _Optional[float] = ..., version: _Optional[str] = ...) -> None: ...

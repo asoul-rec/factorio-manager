@@ -25,7 +25,12 @@
       "all_conf": "机器人配置数据如下：\n{}",
       "savelist": "服务器有以下存档（时间为游戏内时间）：\n{}",
       "upload_prep": "准备上传存档 {}",
-      "uploading": "正在上传存档 {name}，大小 {total_mb:.1f}MB，进度 {percent:.1f}%"
+      "uploading": "正在上传存档 {name}，大小 {total_mb:.1f}MB，进度 {percent:.1f}%",
+      "update_prep": "准备更新 Factorio headless",
+      "updating": "{}",
+      "updating_progress": "{message}\n进度 {percent:.1f}%",
+      "update_satisfied": "{}",
+      "update_complete": "Factorio headless 已更新到 {}"
     },
     "err": {
       "no_manager": "未设置执行端 gRPC 服务器",
@@ -41,7 +46,9 @@
       "timeout": "操作超时，服务器已强制停止",
       "file_not_found": "未找到指定的存档",
       "fac_status_unknown": "Factorio 信息获取失败",
-      "unknown_failed": "执行失败，具体原因已记录到日志"
+      "unknown_failed": "执行失败，具体原因已记录到日志",
+      "update_unavailable": "当前部署不支持在线更新：{}",
+      "update_failed": "更新失败：{}"
     },
     "game": {
       "chat": "{} 说: {}",
@@ -75,7 +82,12 @@
       "all_conf": "咱的配置数据如下：\n{}",
       "savelist": "咱把你之前陪咱玩的内容和时长都记在小本本上了：\n{}",
       "upload_prep": "咱想把 {} 发给你",
-      "uploading": "咱把 {name} 发给你了，一共有 {total_mb:.1f}MB，已经发了 {percent:.1f}%"
+      "uploading": "咱把 {name} 发给你了，一共有 {total_mb:.1f}MB，已经发了 {percent:.1f}%",
+      "update_prep": "咱准备更新 Factorio headless 喵",
+      "updating": "{}",
+      "updating_progress": "{message}\n进度 {percent:.1f}%",
+      "update_satisfied": "{}",
+      "update_complete": "咱已经把 Factorio headless 更新到 {} 了喵"
     },
     "err": {
       "no_manager": "咱小声问一句，应该让哪个 gRPC 服务器干活哇",
@@ -91,7 +103,9 @@
       "timeout": "呜...咱等太久了，只能先让它停下来了喵",
       "file_not_found": "诶，咱找不到你说的存档呢",
       "fac_status_unknown": "咱不知道 Factorio 是什么版本喵",
-      "unknown_failed": "诶，咱不知道怎么又搞砸了，给你看看咱今天的日记（害羞x"
+      "unknown_failed": "诶，咱不知道怎么又搞砸了，给你看看咱今天的日记（害羞x",
+      "update_unavailable": "这个部署还不能在线更新喵：{}",
+      "update_failed": "更新失败了喵：{}"
     },
     "game": {
       "chat": "{} 说: 喵，{}~",

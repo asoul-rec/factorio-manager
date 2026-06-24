@@ -88,6 +88,10 @@ def add_handlers(client: Client):
         ))
 
     client.add_handler(MessageHandler(
+        fac_handlers.update_headless, filters=my_filters.admin & filters.command("update")
+    ))
+
+    client.add_handler(MessageHandler(
         fac_handlers.run_command, filters=my_filters.group_topic & my_filters.not_command()
     ))
     fac_handlers.push_info = {"client": client, "chat_id": config.config["chat_id"]}
