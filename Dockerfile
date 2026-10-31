@@ -1,7 +1,9 @@
 ARG FAC_VER=stable-rootless
 
+ARG PY_VER=3.14
+
 # stage 1: python and packages
-FROM --platform=$BUILDPLATFORM python:3.13-slim-trixie AS pyenv
+FROM --platform=$BUILDPLATFORM python:${PY_VER}-slim-trixie AS pyenv
 
 ARG POETRY_HOME=/opt/poetry
 ARG TARGETARCH
@@ -26,7 +28,7 @@ RUN cd /root/server \
        dist/*.whl psutil
 
 # stage 2: python dependencies (multi-arch)
-FROM python:3.13-slim-trixie AS pydeps
+FROM python:${PY_VER}-slim-trixie AS pydeps
 
 ARG EXPORT_PREFIX=/root/export_rootfs
 
@@ -37,13 +39,13 @@ RUN UNAME_M=$(uname -m) \
     && mkdir -p $EXPORT_PREFIX/usr/lib/$ARCH_DIR/ \
     && cp -a /usr/lib/$ARCH_DIR/libsqlite* $EXPORT_PREFIX/usr/lib/$ARCH_DIR/ \
     && cp -a /usr/local/ $EXPORT_PREFIX/usr/ \
-    && rm -rf $EXPORT_PREFIX/usr/local/lib/python3.13/site-packages/
+    && rm -rf $EXPORT_PREFIX/usr/local/lib/python${PY_VER}/site-packages/
 
 # stage 3: main image
 FROM factoriotools/factorio:${FAC_VER}
 
 COPY --from=pydeps /root/export_rootfs/ /
-COPY --from=pyenv /root/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=pyenv /root/site-packages/ /usr/local/lib/python${PY_VER}/site-packages/
 
 COPY docker-entrypoint.sh /
 
