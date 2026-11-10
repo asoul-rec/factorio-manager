@@ -7,6 +7,7 @@ FROM --platform=$BUILDPLATFORM python:${PY_VER}-slim-trixie AS pyenv
 
 ARG POETRY_HOME=/opt/poetry
 ARG TARGETARCH
+ARG PY_VER
 
 RUN python3 -m venv $POETRY_HOME \
     && $POETRY_HOME/bin/pip install poetry==2.2
@@ -30,6 +31,7 @@ RUN cd /root/server \
 # stage 2: python dependencies (multi-arch)
 FROM python:${PY_VER}-slim-trixie AS pydeps
 
+ARG PY_VER
 ARG EXPORT_PREFIX=/root/export_rootfs
 
 RUN UNAME_M=$(uname -m) \
@@ -43,6 +45,8 @@ RUN UNAME_M=$(uname -m) \
 
 # stage 3: main image
 FROM factoriotools/factorio:${FAC_VER}
+
+ARG PY_VER
 
 COPY --from=pydeps /root/export_rootfs/ /
 COPY --from=pyenv /root/site-packages/ /usr/local/lib/python${PY_VER}/site-packages/
