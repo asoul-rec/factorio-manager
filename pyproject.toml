@@ -7,12 +7,12 @@ authors = [
     { name = "asoul-rec", email = "asoulranbi@gmail.com" },
 ]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
+requires-python = ">=3.13,<4.0"
 dependencies = [
-    "grpcio==1.80.0",
-    "grpcio-tools==1.80.0",
+    "grpcio==1.85.1",
+    "grpcio-tools==1.85.1",
     "pyrofork==2.3.69",
-    "TgCrypto-pyrofork>=1.2.7"
+    "TgCrypto-pyrofork==1.2.8"
 ]
 
 [tool.poetry]

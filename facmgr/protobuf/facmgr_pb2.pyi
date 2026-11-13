@@ -11,7 +11,7 @@ class Ping(_message.Message):
     __slots__ = ("verbose",)
     VERBOSE_FIELD_NUMBER: _ClassVar[int]
     verbose: bool
-    def __init__(self, verbose: bool = ...) -> None: ...
+    def __init__(self, verbose: _Optional[bool] = ...) -> None: ...
 
 class ManagerStat(_message.Message):
     __slots__ = ("welcome", "running", "game_version", "current_save")
@@ -23,7 +23,7 @@ class ManagerStat(_message.Message):
     running: bool
     game_version: str
     current_save: SaveName
-    def __init__(self, welcome: _Optional[str] = ..., running: bool = ..., game_version: _Optional[str] = ..., current_save: _Optional[_Union[SaveName, _Mapping]] = ...) -> None: ...
+    def __init__(self, welcome: _Optional[str] = ..., running: _Optional[bool] = ..., game_version: _Optional[str] = ..., current_save: _Optional[_Union[SaveName, _Mapping]] = ...) -> None: ...
 
 class SaveNameList(_message.Message):
     __slots__ = ("save_name",)
