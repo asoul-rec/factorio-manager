@@ -1,4 +1,4 @@
-ARG FAC_VER=stable-rootless
+ARG FAC_VER=2.1.25-rootless
 
 ARG PY_VER=3.14
 
